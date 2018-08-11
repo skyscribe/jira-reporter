@@ -1,0 +1,17 @@
+[package]
+name = "jira_reporter"
+version = "0.1.0"
+authors = ["fei.yan@nokia-sbell.com"]
+
+[dependencies]
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+
+futures = "0.1"
+hyper = "0.11.24"
+hyper-proxy = "0.4.1"
+tokio-core = "0.1.17"
+
+log = "0.4.3"
+env_logger = "0.5.12"
