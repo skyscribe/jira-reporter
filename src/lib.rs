@@ -64,7 +64,8 @@ pub fn run() {
     let mut core = Core::new().unwrap();
     let input = "https://jiradc.int.net.nokia.com/rest/api/2/filter/145359";
     let login = login::Login::new().to_basic();
-    let fut = fetch::fetch(&mut core, input, login);
+    let fetcher = fetch::Fetcher::new(input.to_string(), &login);
+    let fut = fetcher.fetch(&mut core);
 
     //schedule and run
     if let Err(_err) = core.run(fut) {
