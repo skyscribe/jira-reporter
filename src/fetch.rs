@@ -50,7 +50,7 @@ fn prepare_proxied_client(core: & mut Core, req: &mut Request, uri: &Uri, auth: 
         req.headers_mut().extend(headers.iter());
         req.set_proxy(true);
     } else {
-        warn!("No headers found for proxy!");
+        debug!("No headers found for proxy!");
         req.headers_mut().set(UserAgent::new("MyScript"));
         req.headers_mut().set(Accept(vec![qitem(mime::APPLICATION_JSON)]));
         req.headers_mut().set(Authorization(auth));
@@ -58,7 +58,7 @@ fn prepare_proxied_client(core: & mut Core, req: &mut Request, uri: &Uri, auth: 
 
     //debug headers
     for hdr_item in req.headers().iter() {
-        info!("Header==={}", hdr_item);
+        debug!("Header==={}", hdr_item);
     }
 
     Client::configure().connector(proxy).build(&handle)
