@@ -8,14 +8,13 @@ struct Person{
     phones: Vec<String>,
 }
 
-
 pub fn test_typed() {
     let data = r#"{
-            name: "John Doe",
-            age: 43,
-            phones: [
+            "name": "John Doe",
+            "age": 43,
+            "phones": [
                 "+44 12345",
-                "+44 23456",
+                "+44 23456"
             ]
         }"#;
     
@@ -24,5 +23,5 @@ pub fn test_typed() {
     assert_eq!(p.age, 43);
     assert_eq!(p.phones.len(), 2);
     assert_eq!(p.phones[0], "+44 12345");
-    assert_eq!(p.phones[1], "+44 234456");
+    assert_eq!(p.phones[1], "+44 23456");
 }
