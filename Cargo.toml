@@ -17,3 +17,4 @@ log = "0.4.3"
 env_logger = "0.5.12"
 
 rpassword = "2.0.0"
+hex = "0.3.2"

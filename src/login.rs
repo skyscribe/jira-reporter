@@ -1,10 +1,12 @@
 extern crate hyper;
 extern crate rpassword;
+extern crate hex;
 
 use std::io::{stdin, stdout, Write};
 use self::hyper::header::Basic;
 use self::rpassword::prompt_password_stdout;
 use std::fs;
+use self::hex::{encode, decode};
 
 const CRED_FILE : &str = ".cred.bin";
 
@@ -71,14 +73,21 @@ impl Login {
             return None;
         }
 
+        if content.len() % 2 != 1 {
+            error!("Invalid length, must be odd!");
+            return None;
+        }
+
         let sep: usize = content[0] as usize;
-        if sep < content.len() {
+        let v8_slice_to_string = |vec : &[u8]| String::from_utf8(vec.to_vec()).unwrap();
+        let decode_string = |slice: &[u8] | v8_slice_to_string(&decode(v8_slice_to_string(slice)).unwrap());
+        if sep < (content.len() - 1)/2  {
             Some(Login{
-                username: String::from_utf8(content[1..sep].to_vec()).unwrap(),
-                password: String::from_utf8(content[sep..content.len()].to_vec()).unwrap(),
+                username: decode_string(&content[1..sep]),
+                password: decode_string(&content[sep..content.len()]),
             })
         } else {
-            warn!("Invalid credential file = {}", CRED_FILE);
+            warn!("Invalid credential file = {}, is this first time use?", CRED_FILE);
             None
         }
     }
@@ -87,7 +96,10 @@ impl Login {
         let mut contents : Vec<u8> = Vec::new();
         self.save_to_temp(&mut contents);
         match fs::write(CRED_FILE, contents) {
-            Ok(()) => None,
+            Ok(()) => {
+                info!("New credentials saved for future use!");
+                None
+            },
             Err(_) => {
                 error!("Writing into file failed!");
                 Some("Write error".to_string())
@@ -96,9 +108,9 @@ impl Login {
     }
 
     pub fn save_to_temp(&self, contents: &mut Vec<u8>) {
-        contents.push((self.username.len()+1) as u8);
-        contents.extend(self.username.as_bytes());
-        contents.extend(self.password.as_bytes());
+        contents.push((2 * self.username.len()+1) as u8);
+        contents.extend(encode(&self.username).as_bytes());
+        contents.extend(encode(&self.password).as_bytes());
     }
 }
 
