@@ -4,11 +4,13 @@
 pub mod fetch;
 pub mod login;
 mod demo;
+pub mod query;
 
 #[cfg(test)]
 mod test {
     use ::demo::*;
     use super::login::*;
+    use super::query::*;
     #[test]
     fn typed_example_test() {
         test_typed();
@@ -36,6 +38,21 @@ mod test {
         let mut saved = Vec::new();
         login.save_to_temp(&mut saved);
         assert_eq!(contents, saved);
+    }
+
+    #[test]
+    fn shall_create_correct_query() {
+        let qry = Query::new("Project = FPB".to_string(), 100, vec![
+            String::from("summary"), 
+            String::from("status"), 
+            String::from("assignee")
+        ]);
+        let expected_json = r#"{"jql":"Project = FPB","startAt":0,"maxResults":100,"fields":["summary","status","assignee"]}"#;
+        if let Ok(json) = qry.to_json() {
+            assert_eq!(expected_json, json);
+        } else {
+            assert!(false, "query failed!");
+        }
     }
 }
 

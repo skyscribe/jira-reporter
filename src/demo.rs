@@ -8,6 +8,7 @@ struct Person{
     phones: Vec<String>,
 }
 
+#[allow(dead_code)]
 pub fn test_typed() {
     let data = r#"{
             "name": "John Doe",

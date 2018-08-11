@@ -25,7 +25,7 @@ pub fn fetch(core: &mut Core, input: &str, login: Basic) -> impl Future {
         })
         .map(move |body: Chunk| {
             let body_str = ::std::str::from_utf8(&body).unwrap().to_string();
-            debug!("Body is: <{}>", &body_str);
+            info!("Body is: <{}>", &body_str);
             body_str
         })
         .map_err(|err| {
