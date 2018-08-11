@@ -15,10 +15,18 @@ extern crate tokio_core;
 use self::tokio_core::reactor::Core;
 
 mod fetch;
+mod login;
+
 pub fn run() {
     let mut core = Core::new().unwrap();
-    let fut = fetch::fetch(&mut core);
+    let input = "https://jiradc.int.net.nokia.com/rest/api/2/filter/145359";
+    let login = login::Login::new().to_basic();
+    let fut = fetch::fetch(&mut core, input, login);
+
+    //schedule and run
     if let Err(_err) = core.run(fut) {
         error!("Something wrong here!");
+    } else {
+        info!("Completed now!");
     }
 }
