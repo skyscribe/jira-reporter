@@ -5,7 +5,7 @@ extern crate futures;
 
 use self::hyper::{Client, Request, Chunk, Method, Uri};
 use self::hyper::client::{HttpConnector};
-use self::hyper::header::{Basic, Accept, qitem, Authorization, UserAgent};
+use self::hyper::header::{Basic, Accept, qitem, Authorization, UserAgent, ContentType};
 use self::hyper::mime;
 use self::hyper_proxy::{Proxy, ProxyConnector, Intercept};
 use self::tokio_core::reactor::Core;
@@ -36,14 +36,12 @@ impl <'a> Fetcher<'a> {
         }
     }
 
-    pub fn set_method(&mut self, method: FetchMethod) -> &Fetcher {
+    pub fn set_method(&mut self, method: FetchMethod) {
         self.method = method;
-        self
     }
 
-    pub fn set_body(&mut self, body: String) -> &Fetcher {
+    pub fn set_body(&mut self, body: String)  {
         self.body = Some(body);
-        self
     }
 
     pub fn fetch(&self, core: &mut Core) -> impl Future {
@@ -56,10 +54,12 @@ impl <'a> Fetcher<'a> {
 
         let mut req = Request::new(method, uri.clone());
         if let Some(ref body) = self.body {
+            req.headers_mut().set(ContentType::json());
             req.set_body(body.clone());
         }
         let client = self.prepare_proxied_client(core, &mut req, &uri);
 
+        info!("Start to sending request for {}", uri);
         client.request(req)
             .and_then(|res| {
                 info!("Received response now! {}", res.status());

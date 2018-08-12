@@ -34,4 +34,23 @@ impl Query {
             Err(QueryError::WrongQuery)
         }
     }
+
+    pub fn create_remaining(&self, total: usize) -> Vec<Query> {
+        let mut round = total / self.maxResults - 1;
+        if total % self.maxResults > 0 {
+            round += 1;
+        }
+
+        let mut remainings = Vec::new();
+        for it in 1..=round {
+            remainings.push(Query{
+                jql: self.jql.clone(),
+                startAt: it * self.maxResults,
+                maxResults: self.maxResults,
+                fields: self.fields.clone(),
+            });
+        }
+
+        remainings
+    }
 }
