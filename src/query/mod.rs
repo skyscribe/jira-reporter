@@ -1,9 +1,12 @@
 pub mod query;
+pub mod result;
+pub mod issue;
 
 // Tests for this module
 #[cfg(test)]
 mod test {
     use super::query::*;
+    use super::result::*;
 
     fn create_query() -> (Query, String) {
         (
@@ -38,4 +41,39 @@ mod test {
         assert_eq!(base_json.replace(r#"startAt":0"#, r#"startAt":200"#), 
             remainings[1].to_json().unwrap());
     }
+
+    #[test]
+    fn shall_parse_search_result() {
+        let json = r#"{
+            "expand" : "schema, names",
+            "startAt" : 0,
+            "maxResults" : 3,
+            "total" : 179,
+            "issues" : [
+                {
+                    "expand": "operations, versionedRepresentations, editmeta, changelog, renderedFields",
+                    "id" : "2969769",
+                    "self" : "https://jiradc.int.net.nokia.com/rest/api/2/issue/2969769",
+                    "key" : "FPB-12512"
+                },
+                {
+                    "expand": "operations, versionedRepresentations, editmeta, changelog, renderedFields",
+                    "id" : "2969747",
+                    "self" : "https://jiradc.int.net.nokia.com/rest/api/2/issue/2969747",
+                    "key" : "FPB-12490"
+                },
+                {
+                    "expand": "operations, versionedRepresentations, editmeta, changelog, renderedFields",
+                    "id" : "2969704",
+                    "self" : "https://jiradc.int.net.nokia.com/rest/api/2/issue/2969704",
+                    "key" : "FPB-12447"
+                }
+            ]
+        }"#;
+
+        let qry_result = parse_query_result(json).unwrap();
+        assert_eq!(qry_result.total, 179);
+        assert_eq!(qry_result.startAt, 0);
+    }
+
 }
