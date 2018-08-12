@@ -44,7 +44,8 @@ impl <'a> Fetcher<'a> {
         self.body = Some(body);
     }
 
-    pub fn fetch(&self, core: &mut Core) -> impl Future {
+    pub fn fetch<P>(&self, core: &mut Core, p: Option<P>) -> impl Future
+        where P: FnOnce(&str) -> (){
         //proxied client
         let uri : Uri = self.uri.parse().expect("Invalid uri provided!");
         let method = match self.method {
@@ -67,13 +68,16 @@ impl <'a> Fetcher<'a> {
             })
             .map(move |body: Chunk| {
                 let body_str = ::std::str::from_utf8(&body).unwrap().to_string();
-                info!("Body is: <{}>", &body_str);
-                body_str
+                trace!("Body is: <{}>", &body_str);
+                if let Some(parser) = p {
+                    parser(&body_str);
+                }
+                "success"
             })
             .map_err(|err| {
                 error!("Request failed by: {}", err);
-                err
-            })
+                err.to_string()
+           })
     }
 
     fn prepare_proxied_client(&self, core: & mut Core, req: &mut Request, uri: &Uri)
