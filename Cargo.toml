@@ -14,7 +14,7 @@ hyper-proxy = "0.4.1"
 tokio-core = "0.1.17"
 
 log = "0.4.3"
-env_logger = "0.5.12"
+flexi_logger = "0.9"
 
 rpassword = "2.0.0"
 hex = "0.3.2"

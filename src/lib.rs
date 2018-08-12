@@ -35,10 +35,20 @@ pub fn run() {
         let _res = core.run(future);
     };
 
-    for qry in get_remaining_queries(&result, &search) {
-        let future = create_sub_fetch(&mut core, uri, &qry, &login);
+    let mut issues = Vec::new();
+    get_remaining_queries(&mut result, &search).iter().for_each(|qry|{
+        let parser = |json: &str| {
+            let paged = parse_query_result(&json);
+            issues.extend(paged.unwrap().issues); 
+        };
+        let future = create_sub_fetch(&mut core, uri, &qry, &login, parser);
         let _res = core.run(future);
-    }
+    });
+
+    let mut result_list = *(result.unwrap());
+    result_list.issues.extend(issues);
+    info!("Now we get {} issues in total!", result_list.issues.len());
+    result_list.issues.iter().for_each(|it | it.log());
 }
 
 fn create_initial_search() -> Query {
@@ -51,7 +61,7 @@ fn create_initial_search() -> Query {
     ])
 }
 
-fn get_remaining_queries(result: &Option<Box<QueryResult>>, search: &Query) -> Vec<Query>{
+fn get_remaining_queries(result: &mut Option<Box<QueryResult>>, search: &Query) -> Vec<Query>{
     if let Some(qry_result) = result {
         info!("Got issues = {}, total = {}", qry_result.issues.len(),
             qry_result.total);
@@ -62,11 +72,10 @@ fn get_remaining_queries(result: &Option<Box<QueryResult>>, search: &Query) -> V
     }
 }
 
-fn create_sub_fetch(core: &mut Core, uri: &str, search: &Query, login: &Basic) -> impl Future {
+fn create_sub_fetch<P>(core: &mut Core, uri: &str, search: &Query, login: &Basic, parser: P)
+    -> impl Future where P: FnOnce(&str) -> (){
     let mut fetcher = Fetcher::new(uri.to_string(), &login);
     fetcher.set_method(FetchMethod::Post);
     fetcher.set_body(search.to_json().unwrap());
-
-    let parser = |_x: &str| (); //do nothing now, to be done
     fetcher.fetch(core, Some(parser))
 }
