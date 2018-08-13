@@ -1,12 +1,13 @@
 pub mod query;
 pub mod result;
+pub mod issue;
 
 // Tests for this module
 #[cfg(test)]
 mod test {
     use super::query::*;
     use super::result::*;
-    use checkers::issue::Fs2Issue;
+    use checkers::fs2issue::Fs2Issue;
 
     fn create_query() -> (Query, String) {
         (

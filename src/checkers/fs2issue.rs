@@ -2,23 +2,7 @@ extern crate serde;
 extern crate serde_json;
 
 use self::serde_json::Value;
-
-#[derive(Deserialize, Debug)]
-#[allow(non_snake_case)]
-pub struct Fs2Issue { //TODO: abstract as generic type
-    expand: String,
-    id: String,
-
-    //HATEOS link for next visit
-    #[serde(rename="self")]
-    pub self_link: String,
-
-    //actual key shown in UI
-    pub key: String,
-
-    //TODO: extract this strongly typed field as generic type parameter
-    pub fields : Fs2Fields,
-}
+use query::issue::Issue;
 
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
@@ -31,6 +15,8 @@ pub struct Fs2Fields {
 
     pub summary: String,
 }
+
+pub type Fs2Issue = Issue<Fs2Fields>;
 
 impl Fs2Issue {
     pub fn log(&self) {

@@ -7,7 +7,7 @@ extern crate futures;
 use fetch::fetch::{Fetcher, RequestInfo};
 use query::query::Query;
 use query::result::{parse_query_result, QueryResult};
-use checkers::issue::Fs2Issue;
+use checkers::fs2issue::Fs2Issue;
 
 type Fs2Result = QueryResult<Fs2Issue>;
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
