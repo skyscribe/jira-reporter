@@ -3,6 +3,7 @@ extern crate hyper_proxy;
 extern crate tokio_core;
 extern crate futures;
 
+use std::rc::Rc;
 use self::hyper::{Client, Request, Chunk, Method, Uri};
 use self::hyper::client::{HttpConnector};
 use self::hyper::header::{Basic, Accept, qitem, Authorization, UserAgent, ContentType};
@@ -13,60 +14,70 @@ use self::futures::future::{Future};
 use self::futures::Stream;
 
 #[derive(Debug)]
-pub enum FetchMethod {
-    Get,
-    Post,
+pub struct RequestInfo{
+    method: Method,
+    uri: Uri,
+    body: Option<String>,
 }
+
+impl RequestInfo {
+    pub fn post(uri: &str, body: &str) -> RequestInfo{
+        RequestInfo{
+            method: Method::Post,
+            uri: uri.parse().unwrap(),
+            body: Some(body.to_string()), 
+        }
+    }
+
+    pub fn get(uri: &str) -> RequestInfo {
+        RequestInfo {
+            method: Method::Get,
+            uri: uri.parse().unwrap(),
+            body: None,
+        }
+    }
+} 
 
 #[derive(Debug)]
-pub struct Fetcher<'a> {
-    login: &'a Basic,
-    uri: String,
-    body: Option<String>,
-    method: FetchMethod,
+pub struct Fetcher {
+    login: Rc<Basic>,
+    client: Option<Client<ProxyConnector<HttpConnector>>>,
 }
 
-impl <'a> Fetcher<'a> {
-    pub fn new(input: String, login:&'a Basic) -> Fetcher {
+impl Fetcher{
+    pub fn new(login: Rc<Basic>) -> Fetcher {
         Fetcher {
-            login: &login,
-            uri: input.to_string(),
-            body: None,
-            method: FetchMethod::Get,
+            login: login.clone(),
+            client: None,
         }
     }
 
-    pub fn set_method(&mut self, method: FetchMethod) {
-        self.method = method;
-    }
-
-    pub fn set_body(&mut self, body: String)  {
-        self.body = Some(body);
-    }
-
-    pub fn fetch<P>(&self, core: &mut Core, p: Option<P>) -> impl Future
-        where P: FnOnce(&str) -> (){
-        //proxied client
-        let uri : Uri = self.uri.parse().expect("Invalid uri provided!");
-        let method = match self.method {
-            FetchMethod::Get => Method::Get,
-            FetchMethod::Post => Method::Post,
-        };
-
-        let mut req = Request::new(method, uri.clone());
-        if let Some(ref body) = self.body {
-            req.headers_mut().set(ContentType::json());
-            req.set_body(body.clone());
+    pub fn query_with<P>(&mut self, req: RequestInfo, core:&mut Core, p: Option<P>) -> impl Future
+            where P: FnOnce(&str) -> () {
+        if self.client.is_none() {
+            info!("Creating client connection since not exist yet!");
+            self.client = Some(self.prepare_proxied_client(core));
         }
-        let client = self.prepare_proxied_client(core, &mut req, &uri);
 
-        info!("Start to sending request for {}", uri);
-        client.request(req)
+        info!("Start to sending request for {}", &req.uri);
+        let mut request = Request::new(req.method, req.uri);
+        {self.set_request_headers(&mut request)};
+        if let Some(body) = req.body {
+            request.headers_mut().set(ContentType::json());
+            request.set_body(body.clone());
+        }
+
+        //perform request now
+        self.client.as_ref().unwrap()
+            .request(request)
             .and_then(|res| {
                 info!("Received response now! {}", res.status());
-                res.body().concat2()
+                let b = res.body().concat2();
+                info!("Body concated!");
+                b
             })
             .map(move |body: Chunk| {
+                info!("About to parse chunks!");
                 let body_str = ::std::str::from_utf8(&body).unwrap().to_string();
                 trace!("Body is: <{}>", &body_str);
                 if let Some(parser) = p {
@@ -80,33 +91,30 @@ impl <'a> Fetcher<'a> {
            })
     }
 
-    fn prepare_proxied_client(&self, core: & mut Core, req: &mut Request, uri: &Uri)
+    fn prepare_proxied_client(&self, core: & mut Core) 
             -> Client<ProxyConnector<HttpConnector>> {
         let handle = core.handle();
         let proxy = {
             let proxy_uri = "http://10.144.1.10:8080".parse().unwrap();
             let mut proxy = Proxy::new(Intercept::All,  proxy_uri);
-            proxy.set_authorization(self.login.clone());
+            proxy.set_authorization((*self.login).clone());
 
             let connector = HttpConnector::new(4, &handle);
             ProxyConnector::from_proxy(connector, proxy).unwrap()
         };
+        Client::configure().connector(proxy).build(&handle)
+    }
 
-        if let Some(headers) = proxy.http_headers(&uri) {
-            req.headers_mut().extend(headers.iter());
-            req.set_proxy(true);
-        } else {
-            debug!("No headers found for proxy!");
-            req.headers_mut().set(UserAgent::new("MyScript"));
-            req.headers_mut().set(Accept(vec![qitem(mime::APPLICATION_JSON)]));
-            req.headers_mut().set(Authorization(self.login.clone()));
-        }
+    fn set_request_headers(&self, req: &mut Request) {
+        req.set_proxy(true);
+        req.headers_mut().set(UserAgent::new("MyScript"));
+        req.headers_mut().set(Accept(vec![qitem(mime::APPLICATION_JSON)]));
+        req.headers_mut().set(Authorization((*self.login).clone()));
 
         //debug headers
         for hdr_item in req.headers().iter() {
             debug!("Header==={}", hdr_item);
         }
-
-        Client::configure().connector(proxy).build(&handle)
     }
+
 }
