@@ -5,7 +5,7 @@ use self::serde_json::Value;
 
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
-pub struct Issue {
+pub struct Fs2Issue { //TODO: abstract as generic type
     expand: String,
     id: String,
 
@@ -16,12 +16,13 @@ pub struct Issue {
     //actual key shown in UI
     pub key: String,
 
-    pub fields : Fields,
+    //TODO: extract this strongly typed field as generic type parameter
+    pub fields : Fs2Fields,
 }
 
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
-pub struct Fields {
+pub struct Fs2Fields {
     #[serde(rename="customfield_38692")]
     pub efforts : Value,
 
@@ -31,7 +32,7 @@ pub struct Fields {
     pub summary: String,
 }
 
-impl Issue {
+impl Fs2Issue {
     pub fn log(&self) {
         let efforts = match self.get_efforts() {
             Some(ref effort) => effort.to_string(),
@@ -60,12 +61,12 @@ impl Issue {
 }
 
 #[derive(Deserialize)]
-pub struct IssueList {
-    issues: Vec<Issue>,
+pub struct Fs2IssueList {
+    issues: Vec<Fs2Issue>,
 }
 
 // parse an arry of issues into array of structure
-pub fn parse_from_issue_list(json_list : &str) -> Vec<Issue> {
-    let issues: IssueList = serde_json::from_str(&json_list).unwrap();
+pub fn parse_from_issue_list(json_list : &str) -> Vec<Fs2Issue> {
+    let issues: Fs2IssueList = serde_json::from_str(&json_list).unwrap();
     issues.issues
 }

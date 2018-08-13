@@ -1,12 +1,12 @@
 pub mod query;
 pub mod result;
-pub mod issue;
 
 // Tests for this module
 #[cfg(test)]
 mod test {
     use super::query::*;
     use super::result::*;
+    use checkers::issue::Fs2Issue;
 
     fn create_query() -> (Query, String) {
         (
@@ -86,7 +86,7 @@ mod test {
             ]
         }"#;
 
-        let qry_result = parse_query_result(json).unwrap();
+        let qry_result: Box<QueryResult<Fs2Issue>> = parse_query_result(json).unwrap();
         assert_eq!(qry_result.total, 179);
         assert_eq!(qry_result.startAt, 0);
         let issues = (*qry_result).issues;
@@ -94,6 +94,5 @@ mod test {
 
         let ees : Vec<Option<u32>> = issues.iter().map(|it| it.get_efforts()).collect();
         assert_eq!(ees, vec![Some(60), None, Some(0)]);
-
     }
 }
