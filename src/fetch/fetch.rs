@@ -52,8 +52,9 @@ impl Fetcher{
         }
     }
 
-    pub fn query_with<P>(&mut self, req: RequestInfo, core:&mut Core, p: Option<P>) -> impl Future
-            where P: FnOnce(&str) -> () {
+    pub fn query_with<P>(&mut self, req: RequestInfo, core:&mut Core, p: Option<P>) 
+            -> impl Future<Item=String, Error=String>
+                where P: FnOnce(&str) -> () {
         if self.client.is_none() {
             info!("Creating client connection since not exist yet!");
             self.client = Some(self.prepare_proxied_client(core));

@@ -1,6 +1,7 @@
 
 extern crate hyper;
 extern crate tokio_core;
+use std::rc::Rc;
 use self::tokio_core::reactor::Core;
 extern crate futures;
 
@@ -8,6 +9,8 @@ use fetch::fetch::{Fetcher, RequestInfo};
 use query::query::Query;
 use query::result::{parse_query_result, QueryResult};
 use checkers::fs2issue::Fs2Issue;
+use self::futures::future::{Future, Executor};
+use std::cell::RefCell;
 
 type Fs2Result = QueryResult<Fs2Issue>;
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
@@ -27,30 +30,43 @@ pub fn run(core: &mut Core, fetcher: &mut Fetcher) {
     let search = Query::new(FS2EE_SEARCH.to_string(), 100, fields);
 
     //seary first page
-    let mut result: Option<Box<Fs2Result>> = None;
-    {
-        let request_info = RequestInfo::post(SEARCH_URI, &search.to_json().unwrap());
-        let parser = |json: &str| { result = parse_query_result(&json);};
-        let future = fetcher.query_with(request_info, core, Some(parser));
-        let _res = core.run(future);
-    };
+    let result: Rc<RefCell<Option<Box<Fs2Result>>>> = Rc::new(RefCell::new(None));
+    let request_info = RequestInfo::post(SEARCH_URI, &search.to_json().unwrap());
+    let first_fetch = fetcher.query_with(request_info, core, Some(|json: &str| {
+            *result.borrow_mut() = parse_query_result(&json);}));
+    let _ = core.run(first_fetch);
 
-    //query all the remaining
-    let mut issues = Vec::new();
-    get_remaining_queries(&mut result, &search).iter().for_each(|qry|{
-        let parser = |json: &str| {
-            let paged = parse_query_result(&json);
-            issues.extend(paged.unwrap().issues); 
+    //search remaining
+    for qry in get_remaining_queries(&*result.borrow(), &search){
+        //query this page
+        let cloned_result = Rc::clone(&result);
+        let parser = move |json: &str| {
+            let my_issues = parse_query_result(&json).unwrap().issues;
+            if let Some(ref mut shared) = *cloned_result.borrow_mut() {
+                shared.issues.extend(my_issues);
+            }
         };
         let post_info = RequestInfo::post(SEARCH_URI, &qry.to_json().unwrap());
-        let future = fetcher.query_with(post_info, core, Some(parser));
-        let _res = core.run(future);
-    });
+        let sub_fetch = fetcher.query_with(post_info, core, Some(parser)).map(|_| ()).map_err(|_| ());
+        let _ = core.execute(sub_fetch); 
+    }
 
-    //merge query issue list
-    let mut result_list = *(result.unwrap());
-    result_list.issues.extend(issues);
+    core.turn(None);   
+    check_and_dump(&*result.borrow().as_ref().unwrap());
+}
 
+fn get_remaining_queries(result: &Option<Box<Fs2Result>>, search: &Query) -> Vec<Query>{
+    if let Some(qry_result) = result {
+        info!("Got issues = {}, total = {}", qry_result.issues.len(),
+            qry_result.total);
+        search.create_remaining(qry_result.total)
+    } else {
+        error!("Unexpected result, query failure???!!!");
+        vec![]
+    }
+}
+
+fn check_and_dump(result_list: &Fs2Result) {
     //dumping
     let total = result_list.issues.len();
     info!("Now we get {} issues in total!", total);
@@ -65,16 +81,4 @@ pub fn run(core: &mut Core, fetcher: &mut Fetcher) {
         .map(|it| it.get_efforts().unwrap())
         .fold(0, |acc, x| acc+x);
     info!("Solved efforts are: {} with {} features", solved_eff, total - unsolved.len());
-    
-}
-
-fn get_remaining_queries(result: &mut Option<Box<Fs2Result>>, search: &Query) -> Vec<Query>{
-    if let Some(qry_result) = result {
-        info!("Got issues = {}, total = {}", qry_result.issues.len(),
-            qry_result.total);
-        search.create_remaining(qry_result.total)
-    } else {
-        error!("Unexpected result, query failure???!!!");
-        vec![]
-    }
 }
