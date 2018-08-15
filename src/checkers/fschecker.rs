@@ -1,7 +1,7 @@
 
 extern crate hyper;
 extern crate tokio_core;
-use std::rc::Rc;
+use std::sync::mpsc::channel;
 use self::tokio_core::reactor::Core;
 extern crate futures;
 
@@ -10,7 +10,6 @@ use query::query::Query;
 use query::result::{parse_query_result, QueryResult};
 use checkers::fs2issue::Fs2Issue;
 use self::futures::future::{Future, Executor};
-use std::cell::RefCell;
 
 type Fs2Result = QueryResult<Fs2Issue>;
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
@@ -23,50 +22,57 @@ const FS2EE_FIELDS_SUMMARY  : &'static str = "summary";
 const FS2EE_FIELDS_TITLE    : &'static str = "customfield_38703";
 const FS2EE_FIELDS_EE       : &'static str = "customfield_38692";
 
-pub fn run(core: &mut Core, fetcher: &mut Fetcher) {
+pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
     //construct search
     let fields = vec![FS2EE_FIELDS_SUMMARY, FS2EE_FIELDS_TITLE, FS2EE_FIELDS_EE]
                     .iter().map(|x| x.to_string()).collect();
     let search = Query::new(FS2EE_SEARCH.to_string(), 100, fields);
 
     //seary first page
-    let result: Rc<RefCell<Option<Box<Fs2Result>>>> = Rc::new(RefCell::new(None));
+    let (tx, rx) = channel();
     let request_info = RequestInfo::post(SEARCH_URI, &search.to_json().unwrap());
-    let first_fetch = fetcher.query_with(request_info, core, Some(|json: &str| {
-            *result.borrow_mut() = parse_query_result(&json);}));
-    let _ = core.run(first_fetch);
+    let tx1 = tx.clone();
+    let first_fetch = fetcher.query_with(request_info, core, Some(move |json: &str| {
+            let qry_result : Option<Box<Fs2Result>> = parse_query_result(&json); 
+            let _x = tx1.send(qry_result);
+            info!("First respone parsed!");
+    })).map(|_| ()).map_err(|_| ());
+    let _x = core.execute(first_fetch);
+    let ref mut fs2_result = rx.recv().unwrap().unwrap();
 
     //search remaining
-    for qry in get_remaining_queries(&*result.borrow(), &search){
+    let mut jobs = 0;
+    for qry in get_remaining_queries(fs2_result, &search){
         //query this page
-        let cloned_result = Rc::clone(&result);
+        jobs += 1;
+        let my_sender = tx.clone();
         let parser = move |json: &str| {
-            let my_issues = parse_query_result(&json).unwrap().issues;
-            if let Some(ref mut shared) = *cloned_result.borrow_mut() {
-                shared.issues.extend(my_issues);
-            }
+            let qry_result : Option<Box<Fs2Result>> = parse_query_result(&json); 
+            let _x = my_sender.send(qry_result);
+            info!("First paged response parsed!");
         };
         let post_info = RequestInfo::post(SEARCH_URI, &qry.to_json().unwrap());
         let sub_fetch = fetcher.query_with(post_info, core, Some(parser)).map(|_| ()).map_err(|_| ());
         let _ = core.execute(sub_fetch); 
     }
 
-    core.turn(None);   
-    check_and_dump(&*result.borrow().as_ref().unwrap());
-}
-
-fn get_remaining_queries(result: &Option<Box<Fs2Result>>, search: &Query) -> Vec<Query>{
-    if let Some(qry_result) = result {
-        info!("Got issues = {}, total = {}", qry_result.issues.len(),
-            qry_result.total);
-        search.create_remaining(qry_result.total)
-    } else {
-        error!("Unexpected result, query failure???!!!");
-        vec![]
+    while jobs > 0 {
+        if let Ok(qry_result) = rx.recv() {
+            fs2_result.issues.extend(qry_result.unwrap().issues);
+        }
+        jobs -= 1;
+        info!("Collected a paged response, remaining jobs = {}", jobs);
     }
+    check_and_dump(fs2_result);
 }
 
-fn check_and_dump(result_list: &Fs2Result) {
+fn get_remaining_queries(qry_result: &Box<Fs2Result>, search: &Query) -> Vec<Query>{
+    info!("Got issues = {}, total = {}", qry_result.issues.len(),
+        qry_result.total);
+    search.create_remaining(qry_result.total)
+}
+
+pub fn check_and_dump(result_list: &Fs2Result) {
     //dumping
     let total = result_list.issues.len();
     info!("Now we get {} issues in total!", total);

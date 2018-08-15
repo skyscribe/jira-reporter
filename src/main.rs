@@ -2,6 +2,7 @@ extern crate flexi_logger;
 extern crate jira_reporter;
 extern crate hyper;
 extern crate tokio_core;
+extern crate futures;
 
 use tokio_core::reactor::Core;
 use jira_reporter::fetch::fetch::Fetcher;
@@ -24,8 +25,10 @@ fn init_logs() {
 }
 
 fn run_reports() {
+    use jira_reporter::checkers::*;
+
     let mut core = Core::new().unwrap();
     let login = Rc::new(Login::new().to_basic());
     let mut fetcher = Fetcher::new(login);
-    jira_reporter::checkers::fschecker::run(&mut core, &mut fetcher);
+    fschecker::perform(&mut core, &mut fetcher);
 }
