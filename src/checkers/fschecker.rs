@@ -9,7 +9,7 @@ use fetch::fetch::{Fetcher, RequestInfo};
 use query::query::Query;
 use query::result::{parse_query_result, QueryResult};
 use checkers::fs2issue::Fs2Issue;
-use self::futures::future::{Future, Executor};
+use self::futures::future::{join_all};
 
 type Fs2Result = QueryResult<Fs2Issue>;
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
@@ -36,12 +36,15 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
             let qry_result : Option<Box<Fs2Result>> = parse_query_result(&json); 
             let _x = tx1.send(qry_result);
             info!("First respone parsed!");
-    })).map(|_| ()).map_err(|_| ());
-    let _x = core.execute(first_fetch);
+    }));
+
+    //collect response records
+    let _x = core.run(first_fetch);
     let ref mut fs2_result = rx.recv().unwrap().unwrap();
 
     //search remaining
     let mut jobs = 0;
+    let mut sub_queries = Vec::new();
     for qry in get_remaining_queries(fs2_result, &search){
         //query this page
         jobs += 1;
@@ -52,10 +55,12 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
             info!("First paged response parsed!");
         };
         let post_info = RequestInfo::post(SEARCH_URI, &qry.to_json().unwrap());
-        let sub_fetch = fetcher.query_with(post_info, core, Some(parser)).map(|_| ()).map_err(|_| ());
-        let _ = core.execute(sub_fetch); 
+        let sub_fetch = fetcher.query_with(post_info, core, Some(parser));
+        sub_queries.push(sub_fetch);
     }
+    let _x = core.run(join_all(sub_queries));
 
+    //collect paged sub-queries
     while jobs > 0 {
         if let Ok(qry_result) = rx.recv() {
             fs2_result.issues.extend(qry_result.unwrap().issues);
