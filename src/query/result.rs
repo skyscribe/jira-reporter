@@ -2,6 +2,7 @@ extern crate serde;
 extern crate serde_json;
 
 use self::serde::Deserialize;
+use self::serde::de::DeserializeOwned;
 
 #[derive(Deserialize)]
 #[allow(non_snake_case, dead_code)]
@@ -22,8 +23,8 @@ pub struct QueryResult<T> {
     pub issues: Vec<T>,
 }
 
-pub fn parse_query_result<'de, T>(json: &'de str) -> Option<Box<QueryResult<T>>>
-        where T: Deserialize<'de> {
+pub fn parse_query_result<T>(json: &str) -> Option<Box<QueryResult<T>>>
+        where T: DeserializeOwned {
     let qry_result = serde_json::from_str::<QueryResult<T>>(&json);
     match qry_result {
         Ok(result) => Some(Box::new(result)),

@@ -1,17 +1,16 @@
 
-extern crate hyper;
 extern crate tokio_core;
-use std::sync::mpsc::channel;
-use self::tokio_core::reactor::Core;
-extern crate futures;
+extern crate serde;
 
-use fetch::fetch::{Fetcher, RequestInfo};
-use query::query::Query;
-use query::result::{parse_query_result, QueryResult};
+use self::tokio_core::reactor::Core;
+use fetch::fetch::{Fetcher};
+use query::result::QueryResult;
+
+use checkers::search::perform_gen;
 use checkers::fs2issue::Fs2Issue;
-use self::futures::future::{join_all};
 
 type Fs2Result = QueryResult<Fs2Issue>;
+
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
 const FS2EE_SEARCH : &'static str = "project=FPB AND issuetype in (\"\
     Effort Estimation\", \"Entity Technical Analysis\") \
@@ -23,58 +22,10 @@ const FS2EE_FIELDS_TITLE    : &'static str = "customfield_38703";
 const FS2EE_FIELDS_EE       : &'static str = "customfield_38692";
 
 pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
-    //construct search
     let fields = vec![FS2EE_FIELDS_SUMMARY, FS2EE_FIELDS_TITLE, FS2EE_FIELDS_EE]
                     .iter().map(|x| x.to_string()).collect();
-    let search = Query::new(FS2EE_SEARCH.to_string(), 100, fields);
-
-    //seary first page
-    let (tx, rx) = channel();
-    let request_info = RequestInfo::post(SEARCH_URI, &search.to_json().unwrap());
-    let tx1 = tx.clone();
-    let first_fetch = fetcher.query_with(request_info, core, Some(move |json: &str| {
-            let qry_result : Option<Box<Fs2Result>> = parse_query_result(&json); 
-            let _x = tx1.send(qry_result);
-            info!("First respone parsed!");
-    }));
-
-    //collect response records
-    let _x = core.run(first_fetch);
-    let ref mut fs2_result = rx.recv().unwrap().unwrap();
-
-    //search remaining
-    let mut jobs = 0;
-    let mut sub_queries = Vec::new();
-    for qry in get_remaining_queries(fs2_result, &search){
-        //query this page
-        jobs += 1;
-        let my_sender = tx.clone();
-        let parser = move |json: &str| {
-            let qry_result : Option<Box<Fs2Result>> = parse_query_result(&json); 
-            let _x = my_sender.send(qry_result);
-            info!("First paged response parsed!");
-        };
-        let post_info = RequestInfo::post(SEARCH_URI, &qry.to_json().unwrap());
-        let sub_fetch = fetcher.query_with(post_info, core, Some(parser));
-        sub_queries.push(sub_fetch);
-    }
-    let _x = core.run(join_all(sub_queries));
-
-    //collect paged sub-queries
-    while jobs > 0 {
-        if let Ok(qry_result) = rx.recv() {
-            fs2_result.issues.extend(qry_result.unwrap().issues);
-        }
-        jobs -= 1;
-        info!("Collected a paged response, remaining jobs = {}", jobs);
-    }
-    check_and_dump(fs2_result);
-}
-
-fn get_remaining_queries(qry_result: &Box<Fs2Result>, search: &Query) -> Vec<Query>{
-    info!("Got issues = {}, total = {}", qry_result.issues.len(),
-        qry_result.total);
-    search.create_remaining(qry_result.total)
+    let result = perform_gen::<Fs2Issue>(core, fetcher, SEARCH_URI, FS2EE_SEARCH, fields);
+    check_and_dump(&result);
 }
 
 pub fn check_and_dump(result_list: &Fs2Result) {
