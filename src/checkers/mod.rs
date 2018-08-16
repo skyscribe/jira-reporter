@@ -1,3 +1,3 @@
-pub mod search;
-pub mod fschecker;
-pub mod fs2issue;
+pub(crate) mod search;
+pub mod fs2checker;
+pub(crate) mod fs2issue;

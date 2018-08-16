@@ -10,16 +10,11 @@ use checkers::search::perform_gen;
 use checkers::fs2issue::Fs2Issue;
 
 type Fs2Result = QueryResult<Fs2Issue>;
-
+use checkers::fs2issue::{FS2EE_FIELDS_SUMMARY, FS2EE_FIELDS_EE, FS2EE_FIELDS_TITLE};
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
 const FS2EE_SEARCH : &'static str = "project=FPB AND issuetype in (\"\
     Effort Estimation\", \"Entity Technical Analysis\") \
     AND \"Competence Area\" = \"MANO MZ\"";
-
-//This has to match with query::issue::Fs2Fields
-const FS2EE_FIELDS_SUMMARY  : &'static str = "summary";
-const FS2EE_FIELDS_TITLE    : &'static str = "customfield_38703";
-const FS2EE_FIELDS_EE       : &'static str = "customfield_38692";
 
 pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
     let fields = vec![FS2EE_FIELDS_SUMMARY, FS2EE_FIELDS_TITLE, FS2EE_FIELDS_EE]

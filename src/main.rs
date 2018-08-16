@@ -30,5 +30,5 @@ fn run_reports() {
     let mut core = Core::new().unwrap();
     let login = Rc::new(Login::new().to_basic());
     let mut fetcher = Fetcher::new(login);
-    fschecker::perform(&mut core, &mut fetcher);
+    fs2checker::perform(&mut core, &mut fetcher);
 }

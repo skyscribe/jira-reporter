@@ -4,6 +4,10 @@ extern crate serde_json;
 use self::serde_json::Value;
 use query::issue::Issue;
 
+pub(crate) const FS2EE_FIELDS_SUMMARY  : &'static str = "summary";
+pub(crate) const FS2EE_FIELDS_TITLE    : &'static str = "customfield_38703";
+pub(crate) const FS2EE_FIELDS_EE       : &'static str = "customfield_38692";
+
 #[derive(Deserialize, Debug)]
 #[allow(non_snake_case)]
 pub struct Fs2Fields {
@@ -44,15 +48,4 @@ impl Fs2Issue {
             _ => None,
         }
     }
-}
-
-#[derive(Deserialize)]
-pub struct Fs2IssueList {
-    issues: Vec<Fs2Issue>,
-}
-
-// parse an arry of issues into array of structure
-pub fn parse_from_issue_list(json_list : &str) -> Vec<Fs2Issue> {
-    let issues: Fs2IssueList = serde_json::from_str(&json_list).unwrap();
-    issues.issues
 }
