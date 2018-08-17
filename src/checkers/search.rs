@@ -34,31 +34,53 @@ pub fn perform_gen<T>(core: &mut Core, fetcher: &mut Fetcher, uri: &str, jql: &s
     let mut search_result = rx.recv().unwrap().unwrap();
 
     //search remaining
-    let mut jobs = 0;
-    let mut sub_queries = Vec::new();
-    for qry in get_remaining_queries(&search_result, &search){
-        //query this page
-        jobs += 1;
-        let my_sender = tx.clone();
-        let parser = move |json: &str| {
-            let qry_result = parse_query_result::<T>(&json); 
-            let _x = my_sender.send(qry_result);
-            info!("First paged response parsed!");
-        };
-        let post_info = RequestInfo::post(uri, &qry.to_json().unwrap());
-        let sub_fetch = fetcher.query_with(post_info, core, Some(parser));
-        sub_queries.push(sub_fetch);
-    }
-    let _x = core.run(join_all(sub_queries));
+    let (guard_tx, guard_rx) = channel();
+    let mut pending_jobs = get_remaining_queries(&search_result, &search);
 
-    //collect paged sub-queries
-    while jobs > 0 {
-        if let Ok(qry_result) = rx.recv() {
-            search_result.issues.extend(qry_result.unwrap().issues);
+    while pending_jobs.len() > 0 {
+        let mut sub_queries = Vec::new();
+
+        //Drain all pending jobs 
+        for qry in pending_jobs.iter() {
+            //query this page
+            let my_job = qry.startAt;
+            let my_guard = guard_tx.clone();
+            let parser = move |json: &str| {
+                let my_result = parse_query_result::<T>(&json).ok_or_else(||{
+                    warn!("Job {} failed!", my_job);
+                    my_job                  
+                });
+                let _x = my_guard.send(my_result);
+            };
+            let post_info = RequestInfo::post(uri, &qry.to_json().unwrap());
+            let sub_fetch = fetcher.query_with(post_info, core, Some(parser));
+            sub_queries.push(sub_fetch);
         }
-        jobs -= 1;
-        info!("Collected a paged response, remaining jobs = {}", jobs);
+        let _x = core.run(join_all(sub_queries));
+
+        //collect paged sub-queries
+        let mut unfinished: Vec<usize> = Vec::new();
+        let total = pending_jobs.len();
+        for  x in 1..(total+1) {
+            if let Ok(process_result) = guard_rx.recv() {
+                match process_result {
+                    Ok(qry) => { 
+                        search_result.issues.extend(qry.issues);
+                        info!("[{}/{}] Collected a paged response and collected", x, total);
+                    },
+                    Err(job) => {
+                        unfinished.push(job.clone());
+                        info!("[{}/{}] unexpected response, would retry this", x, total);
+                    },
+                }
+            }
+
+        }
+
+        //check failures and retry them
+        pending_jobs.retain(|ref qry| unfinished.binary_search(&qry.startAt).is_ok());
     }
+
     return search_result;
 }
 

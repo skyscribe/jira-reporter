@@ -7,7 +7,7 @@ use std::rc::Rc;
 #[allow(non_snake_case)]
 pub struct Query{
     pub jql: Rc<String>,
-    startAt: usize,
+    pub startAt: usize,
     pub maxResults: usize,
     pub fields: Rc<Vec<String>>,
 }

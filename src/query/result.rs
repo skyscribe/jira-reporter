@@ -29,7 +29,7 @@ pub fn parse_query_result<T>(json: &str) -> Option<Box<QueryResult<T>>>
     match qry_result {
         Ok(result) => Some(Box::new(result)),
         Err(err) => {
-            error!("Parse json failed, err={}", err);
+            error!("Parse json failed, err={}, json={}", err, json);
             None
         }
     } 
