@@ -84,7 +84,7 @@ impl Fetcher{
                 if let Some(parser) = p {
                     parser(&body_str);
                 }
-                "success".to_string()
+                "performed".to_string()
             })
             .map_err(|err| {
                 error!("Request failed by: {}", err);

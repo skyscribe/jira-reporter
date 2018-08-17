@@ -8,7 +8,7 @@ pub(crate) const FS2EE_FIELDS_SUMMARY  : &'static str = "summary";
 pub(crate) const FS2EE_FIELDS_TITLE    : &'static str = "customfield_38703";
 pub(crate) const FS2EE_FIELDS_EE       : &'static str = "customfield_38692";
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct Fs2Fields {
     #[serde(rename="customfield_38692")]

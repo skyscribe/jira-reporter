@@ -1,6 +1,7 @@
 
 extern crate hyper;
 extern crate tokio_core;
+use std::clone::Clone;
 use std::sync::mpsc::channel;
 use self::tokio_core::reactor::Core;
 extern crate futures;
@@ -15,27 +16,36 @@ use self::futures::future::join_all;
 
 //generic search with paged response and collect them in a generic/strongly typed manner
 pub fn perform_gen<T>(core: &mut Core, fetcher: &mut Fetcher, uri: &str, jql: &str,
-        fields: Vec<String>) -> Box<QueryResult<T>> where T: DeserializeOwned {
+        fields: Vec<String>) -> Box<QueryResult<T>> 
+        where T: DeserializeOwned + Clone {
     //construct search
     let search = Query::new(jql.to_string(), 100, fields);
+    let mut first_job = vec![search.clone()];
+    let mut result = run_search_repeatedly(&mut first_job, core, fetcher, &uri);
+    if result.len() == 0 {
+        error!("First search failed?");
+        panic!("Unexpected ending!");
+    }
 
-    //seary first page
-    let (tx, rx) = channel();
-    let request_info = RequestInfo::post(uri, &search.to_json().unwrap());
-    let tx1 = tx.clone();
-    let first_fetch = fetcher.query_with(request_info, core, Some(move |json: &str| {
-            let qry_result = parse_query_result::<T>(&json); 
-            let _x = tx1.send(qry_result);
-            info!("First respone parsed!");
-    }));
-
-    //collect response records
-    let _x = core.run(first_fetch);
-    let mut search_result = rx.recv().unwrap().unwrap();
-
-    //search remaining
-    let (guard_tx, guard_rx) = channel();
+    info!("Got first result now, check remaining by page info!");
+    //borrow and modify the search result
+    let search_result = &mut result[0];
+    //search remaining and combine the result
     let mut pending_jobs = get_remaining_queries(&search_result, &search);
+    for paged in run_search_repeatedly(&mut pending_jobs, core, fetcher, &uri)
+        .iter() {
+        search_result.issues.extend(paged.issues.iter().cloned());
+    }
+
+    return Box::new(search_result.clone());
+}
+
+//run given queries repeatedly until all results got
+fn run_search_repeatedly<T:DeserializeOwned>(pending_jobs: &mut Vec<Query>, core: &mut Core, 
+        fetcher: &mut Fetcher, uri: &str) -> Box<Vec<QueryResult<T>>>{
+    
+    let mut result = Box::new(Vec::new());
+    let (guard_tx, guard_rx) = channel();
 
     while pending_jobs.len() > 0 {
         let mut sub_queries = Vec::new();
@@ -52,6 +62,7 @@ pub fn perform_gen<T>(core: &mut Core, fetcher: &mut Fetcher, uri: &str, jql: &s
                 });
                 let _x = my_guard.send(my_result);
             };
+
             let post_info = RequestInfo::post(uri, &qry.to_json().unwrap());
             let sub_fetch = fetcher.query_with(post_info, core, Some(parser));
             sub_queries.push(sub_fetch);
@@ -64,9 +75,9 @@ pub fn perform_gen<T>(core: &mut Core, fetcher: &mut Fetcher, uri: &str, jql: &s
         for  x in 1..(total+1) {
             if let Ok(process_result) = guard_rx.recv() {
                 match process_result {
-                    Ok(qry) => { 
-                        search_result.issues.extend(qry.issues);
-                        info!("[{}/{}] Collected a paged response and collected", x, total);
+                    Ok(qry) => {
+                        result.push(*qry);
+                        info!("[{}/{}] Collected a paged response!", x, total);
                     },
                     Err(job) => {
                         unfinished.push(job.clone());
@@ -74,19 +85,16 @@ pub fn perform_gen<T>(core: &mut Core, fetcher: &mut Fetcher, uri: &str, jql: &s
                     },
                 }
             }
-
         }
 
         //check failures and retry them
         pending_jobs.retain(|ref qry| unfinished.binary_search(&qry.startAt).is_ok());
     }
-
-    return search_result;
-}
+    result
+} 
 
 //Create remaining queries list based on first paged search result
-fn get_remaining_queries<T>(qry_result: &Box<QueryResult<T>>, search: &Query) -> Vec<Query>{
-    info!("Got issues = {}, total = {}", qry_result.issues.len(),
-        qry_result.total);
+fn get_remaining_queries<T>(qry_result: &QueryResult<T>, search: &Query) -> Vec<Query>{
+    info!("Got issues = {}, total = {}", qry_result.issues.len(), qry_result.total);
     search.create_remaining(qry_result.total)
 }

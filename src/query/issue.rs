@@ -3,7 +3,7 @@ extern crate serde_json;
 
 use self::serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct Issue <T> { 
     expand: String,

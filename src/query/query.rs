@@ -3,7 +3,7 @@ extern crate serde_json;
 
 use std::rc::Rc;
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 #[allow(non_snake_case)]
 pub struct Query{
     pub jql: Rc<String>,

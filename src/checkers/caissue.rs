@@ -11,7 +11,7 @@ pub(crate) const CA_FIELDS_STARTFB      : &'static str = "customfield_38694";
 pub(crate) const CA_FIELDS_ENDFB        : &'static str = "customfield_38693";
 pub(crate) const CA_FIELDS_TYPE         : &'static str = "customfield_38750";
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct CAFields {
     pub summary: String,

@@ -4,7 +4,7 @@ extern crate serde_json;
 use self::serde::Deserialize;
 use self::serde::de::DeserializeOwned;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[allow(non_snake_case, dead_code)]
 pub struct QueryResult<T> {
     //not used
@@ -29,7 +29,7 @@ pub fn parse_query_result<T>(json: &str) -> Option<Box<QueryResult<T>>>
     match qry_result {
         Ok(result) => Some(Box::new(result)),
         Err(err) => {
-            error!("Parse json failed, err={}, json={}", err, json);
+            error!("Parse json failed, err={}", err);
             None
         }
     } 
