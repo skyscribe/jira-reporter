@@ -19,7 +19,9 @@ const FS2EE_SEARCH : &'static str = "project=FPB AND issuetype in (\"\
 pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
     let fields = vec![FS2EE_FIELDS_SUMMARY, FS2EE_FIELDS_TITLE, FS2EE_FIELDS_EE]
                     .iter().map(|x| x.to_string()).collect();
-    let result = perform_gen::<Fs2Issue>(core, fetcher, SEARCH_URI, FS2EE_SEARCH, fields);
+    let mut result = Fs2Result::default(100);
+    perform_gen::<Fs2Issue>(core, fetcher, SEARCH_URI, FS2EE_SEARCH, 
+        fields, &mut result);
     check_and_dump(&result);
 }
 

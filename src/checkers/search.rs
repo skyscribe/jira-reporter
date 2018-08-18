@@ -16,35 +16,26 @@ use self::futures::future::join_all;
 
 //generic search with paged response and collect them in a generic/strongly typed manner
 pub fn perform_gen<T>(core: &mut Core, fetcher: &mut Fetcher, uri: &str, jql: &str,
-        fields: Vec<String>) -> Box<QueryResult<T>> 
+        fields: Vec<String>, result: &mut QueryResult<T>) 
         where T: DeserializeOwned + Clone {
     //construct search
     let search = Query::new(jql.to_string(), 100, fields);
     let mut first_job = vec![search.clone()];
-    let mut result = run_search_repeatedly(&mut first_job, core, fetcher, &uri);
-    if result.len() == 0 {
+    search_and_collect(result, &mut first_job, core, fetcher, &uri);
+    if result.issues.len() == 0 {
         error!("First search failed?");
         panic!("Unexpected ending!");
     }
 
     info!("Got first result now, check remaining by page info!");
-    //borrow and modify the search result
-    let search_result = &mut result[0];
     //search remaining and combine the result
-    let mut pending_jobs = get_remaining_queries(&search_result, &search);
-    for paged in run_search_repeatedly(&mut pending_jobs, core, fetcher, &uri)
-        .iter() {
-        search_result.issues.extend(paged.issues.iter().cloned());
-    }
-
-    return Box::new(search_result.clone());
+    let mut pending_jobs = get_remaining_queries(result, &search);
+    search_and_collect(result, &mut pending_jobs, core, fetcher, &uri);
 }
 
 //run given queries repeatedly until all results got
-fn run_search_repeatedly<T:DeserializeOwned>(pending_jobs: &mut Vec<Query>, core: &mut Core, 
-        fetcher: &mut Fetcher, uri: &str) -> Box<Vec<QueryResult<T>>>{
-    
-    let mut result = Box::new(Vec::new());
+fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_jobs: &mut Vec<Query>, 
+        core: &mut Core, fetcher: &mut Fetcher, uri: &str){
     let (guard_tx, guard_rx) = channel();
 
     while pending_jobs.len() > 0 {
@@ -76,7 +67,7 @@ fn run_search_repeatedly<T:DeserializeOwned>(pending_jobs: &mut Vec<Query>, core
             if let Ok(process_result) = guard_rx.recv() {
                 match process_result {
                     Ok(qry) => {
-                        result.push(*qry);
+                        result.collect_from(*qry);
                         info!("[{}/{}] Collected a paged response!", x, total);
                     },
                     Err(job) => {
@@ -90,7 +81,6 @@ fn run_search_repeatedly<T:DeserializeOwned>(pending_jobs: &mut Vec<Query>, core
         //check failures and retry them
         pending_jobs.retain(|ref qry| unfinished.binary_search(&qry.startAt).is_ok());
     }
-    result
 } 
 
 //Create remaining queries list based on first paged search result

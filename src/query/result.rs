@@ -34,3 +34,25 @@ pub fn parse_query_result<T>(json: &str) -> Option<Box<QueryResult<T>>>
         }
     } 
 }
+
+impl<T:DeserializeOwned> QueryResult<T> {
+    //move fields from another one
+    pub fn collect_from(&mut self, other: QueryResult<T>) {
+        self.total = other.total;
+        self.expand = other.expand;
+        self.startAt = other.startAt;
+        self.maxResults = other.maxResults;
+        self.issues.extend(other.issues);
+    }
+
+    //generate default
+    pub fn default(max: usize) -> QueryResult<T> {
+        QueryResult {
+            total: max,
+            expand: "".to_string(),
+            startAt: 0,
+            maxResults: max,
+            issues: Vec::new(),
+        }
+    }
+} 

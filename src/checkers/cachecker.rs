@@ -21,7 +21,9 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
     let fields = vec![CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TEAM, 
             CA_FIELDS_TYPE, CA_FIELDS_STARTFB, CA_FIELDS_ENDFB].iter()
         .map(|x| x.to_string()).collect();
-    let result = perform_gen::<CAIssue>(core, fetcher, SEARCH_URI, CA_SEARCH, fields);
+    
+    let mut result: CAResult = CAResult::default(100);
+    perform_gen::<CAIssue>(core, fetcher, SEARCH_URI, CA_SEARCH, fields, &mut result);
     check_and_dump(&result);
 }
 
