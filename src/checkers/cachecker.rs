@@ -36,16 +36,31 @@ pub fn check_and_dump(result_list: &CAResult) {
     //dumping
     let total = result_list.issues.len();
     let mut buf_writer = BufWriter::new(File::create("ca-analysis.txt").unwrap());
+    let banner = "==================================================================\n".as_bytes();
+
     let summary = format(format_args!("@@ CA analysis: {} issues in total\n", total));
     info!("{}", summary);
     buf_writer.write(summary.as_bytes()).unwrap();
 
+    buf_writer.write(banner).unwrap();
     result_list.issues.iter().for_each(|it| {
-        let line = format(format_args!("{}|{}|{}|{}|{}\n",
-            it.get_summary(), it.get_fid(), it.get_type(), it.get_start(), it.get_end()    
+        let (subid, desc) = it.get_summary();
+        let line = format(format_args!("{:10}|{:20}|{:6}|{:4}|{:4}|{:40}\n",
+            it.get_fid(), get_leftmost(subid, 20), it.get_type(), 
+            it.get_start(), it.get_end(),
+            get_leftmost(desc, 40)    
         ));
         buf_writer.write(line.as_bytes()).unwrap();
     });
+    buf_writer.write(banner).unwrap();
 
     info!("Analysis of CA issues finished!");
+}
+
+pub fn get_leftmost(raw: &str, total: usize) -> &str {
+    if raw.len() > total {
+        &raw[0..total]
+    } else {
+        &raw
+    }
 }
