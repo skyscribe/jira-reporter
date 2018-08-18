@@ -63,6 +63,6 @@ pub fn get_leftmost(raw: &str, total: usize) -> &str {
     if max > total {
         &raw[0..total]
     } else {
-        &raw[0..max-1]
+        &raw[0..max]
     }
 }
