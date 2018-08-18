@@ -51,15 +51,10 @@ impl CAIssue {
 
     //get summary info - actual id and description
     pub fn get_summary(&self) -> (&str, &str) {
-        let v:Vec<&str> = self.fields.summary.split(" - ").collect();
-        if v.len() > 1 {
-            (v[0], v[v.len()-1])
-        } else {
-            //split by first " " then
-            match self.fields.summary.find(" ") {
-                Some(x) => self.fields.summary.split_at(x),
-                None => (v[0], " "),
-            }
+        //split by first " " only
+        match self.fields.summary.find(" ") {
+            Some(x) => self.fields.summary.split_at(x),
+            None => (&self.fields.summary, " "),
         }
     }
 
@@ -68,7 +63,6 @@ impl CAIssue {
     }
 
     pub fn get_type(&self) -> &str {
-        //TODO: refactor this in functional manner!
         match self.fields.activity_type {
             Value::Object(ref obj) => {
                 match obj["value"] {
@@ -94,5 +88,9 @@ impl CAIssue {
 
     pub fn get_end(&self) -> &str {
         get_wrapped_string(&self.fields.end_fb)
+    }
+
+    pub fn get_team(&self) -> &str {
+        get_wrapped_string(&self.fields.team)
     }
 }

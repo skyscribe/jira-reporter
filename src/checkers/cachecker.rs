@@ -45,8 +45,9 @@ pub fn check_and_dump(result_list: &CAResult) {
     buf_writer.write(banner).unwrap();
     result_list.issues.iter().for_each(|it| {
         let (subid, desc) = it.get_summary();
-        let line = format(format_args!("{:10}|{:20}|{:6}|{:4}|{:4}|{:40}\n",
-            it.get_fid(), get_leftmost(subid, 20), it.get_type(), 
+        let line = format(format_args!("{:10}|{:20}|{:6}|{:15}|{:4}|{:4}|{:40}\n",
+            it.get_fid(), get_leftmost(subid, 20), it.get_type(),
+            get_leftmost(it.get_team(), 15), 
             it.get_start(), it.get_end(),
             get_leftmost(desc, 40)    
         ));
@@ -58,9 +59,10 @@ pub fn check_and_dump(result_list: &CAResult) {
 }
 
 pub fn get_leftmost(raw: &str, total: usize) -> &str {
-    if raw.len() > total {
+    let max = raw.find("\n").map_or(raw.len(), |x| x);
+    if max > total {
         &raw[0..total]
     } else {
-        &raw
+        &raw[0..max-1]
     }
 }
