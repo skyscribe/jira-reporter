@@ -6,6 +6,11 @@ use self::tokio_core::reactor::Core;
 use fetch::fetch::{Fetcher};
 use query::result::QueryResult;
 
+use std::io::BufWriter;
+use std::io::Write;
+use std::fmt::format;
+use std::fs::File;
+
 use checkers::search::perform_gen;
 use checkers::caissue::CAIssue;
 
@@ -30,8 +35,17 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
 pub fn check_and_dump(result_list: &CAResult) {
     //dumping
     let total = result_list.issues.len();
-    info!("Now we get {} issues in total!", total);
+    let mut buf_writer = BufWriter::new(File::create("ca-analysis.txt").unwrap());
+    let summary = format(format_args!("@@ CA analysis: {} issues in total\n", total));
+    info!("{}", summary);
+    buf_writer.write(summary.as_bytes()).unwrap();
 
-    //TODO: further handle the results here?
-    result_list.issues.iter().for_each(|it| it.log());
+    result_list.issues.iter().for_each(|it| {
+        let line = format(format_args!("{}|{}|{}|{}|{}\n",
+            it.get_summary(), it.get_fid(), it.get_type(), it.get_start(), it.get_end()    
+        ));
+        buf_writer.write(line.as_bytes()).unwrap();
+    });
+
+    info!("Analysis of CA issues finished!");
 }
