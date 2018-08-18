@@ -23,17 +23,18 @@ pub struct Fs2Fields {
 pub type Fs2Issue = Issue<Fs2Fields>;
 
 impl Fs2Issue {
-    pub fn log(&self) {
-        let efforts = match self.get_efforts() {
+    pub fn get_efforts_display(&self) -> String {
+        match self.get_efforts() {
             Some(ref effort) => effort.to_string(),
             None => String::from("NA"),
-        };
-        let title = match self.fields.title {
-            Value::String(ref some) => &some,
-            _ => "NA", 
-        };
+        }
+    }
 
-        info!("|{}|{}|{}|{}", self.key, self.self_link, title, efforts);
+    pub fn get_title_display(&self) -> String {
+        match self.fields.title {
+            Value::String(ref some) => some.clone(),
+            _ => "NA".to_string(), 
+        }
     }
 
     //check if we have set efforts

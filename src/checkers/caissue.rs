@@ -17,7 +17,7 @@ pub struct CAFields {
     pub summary: String,
 
     #[serde(rename="customfield_37381")]
-    pub feature_id: String,
+    pub feature_id: Value,
 
     #[serde(rename="customfield_38727")]
     pub team : Value, //string or null

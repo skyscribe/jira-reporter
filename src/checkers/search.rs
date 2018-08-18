@@ -47,10 +47,7 @@ fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_j
             let my_job = qry.startAt;
             let my_guard = guard_tx.clone();
             let parser = move |json: &str| {
-                let my_result = parse_query_result::<T>(&json).ok_or_else(||{
-                    warn!("Job {} failed!", my_job);
-                    my_job                  
-                });
+                let my_result = parse_query_result::<T>(&json).ok_or_else(|| my_job);
                 let _x = my_guard.send(my_result);
             };
 
@@ -78,8 +75,12 @@ fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_j
             }
         }
 
-        //check failures and retry them
-        pending_jobs.retain(|ref qry| unfinished.binary_search(&qry.startAt).is_ok());
+        //check failures and retain them for retry
+        pending_jobs.retain(|ref qry| {
+            unfinished.sort_unstable();
+            unfinished.binary_search(&qry.startAt).is_ok()
+        });
+        info!("Total retry jobs count = {}", pending_jobs.len());
     }
 } 
 

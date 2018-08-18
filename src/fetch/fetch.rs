@@ -60,7 +60,7 @@ impl Fetcher{
             self.client = Some(self.prepare_proxied_client(core));
         }
 
-        info!("Start to sending request for {}", &req.uri);
+        info!("Request for {}", &req.uri);
         let mut request = Request::new(req.method, req.uri);
         {self.set_request_headers(&mut request)};
         if let Some(body) = req.body {
@@ -74,11 +74,11 @@ impl Fetcher{
             .and_then(|res| {
                 info!("Received response now! {}", res.status());
                 let b = res.body().concat2();
-                info!("Body concated!");
+                trace!("Body concated!");
                 b
             })
             .map(move |body: Chunk| {
-                info!("About to parse chunks!");
+                trace!("About to parse chunks!");
                 let body_str = ::std::str::from_utf8(&body).unwrap().to_string();
                 trace!("Body is: <{}>", &body_str);
                 if let Some(parser) = p {

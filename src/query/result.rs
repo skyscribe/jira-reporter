@@ -29,7 +29,11 @@ pub fn parse_query_result<T>(json: &str) -> Option<Box<QueryResult<T>>>
     match qry_result {
         Ok(result) => Some(Box::new(result)),
         Err(err) => {
-            error!("Parse json failed, err={}", err);
+            let ctx_len = 60;
+            let start = if err.column() < ctx_len { 0 } else {err.column() - ctx_len};
+            let end = if err.column() + ctx_len > json.len() {json.len()} else {err.column() + ctx_len};
+            let ctx = &json[start..end];
+            error!("Parse json failed, err={}, context={}", err, ctx);
             None
         }
     } 
