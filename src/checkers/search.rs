@@ -63,7 +63,6 @@ fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_j
                         //TODO: handle exceptions in graceful manner?
                         warn!("This job {} has failed by {}", job1, err);
                         let _x = guard1.send(Err(job1 + 10000)); 
-                        warn!("Sent to channel! Should exit the outer loop!");
                         "failed"
                     });
             sub_queries.push(sub_fetch);
@@ -71,23 +70,23 @@ fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_j
         let _x = core.run(join_all(sub_queries));
 
         //collect paged sub-queries
-        let mut unfinished: Vec<usize> = Vec::new();
+        let mut finished: Vec<usize> = Vec::new();
         let total = pending_jobs.len();
-        info!("Pending jobs = {}", total);
         for  x in 1..(total+1) {
             if let Ok(process_result) = guard_rx.recv() {
                 match process_result {
                     Ok(qry) => {
+                        finished.push(qry.startAt);
                         result.collect_from(*qry);
                         info!("[{}/{}] Collected a paged response!", x, total);
                     },
                     Err(job) => {
                         if job > 10000 {
-                            //Should also know which was not so successful?
+                            //Should also know which was not so successful since upon failure
+                            // unsuccessful futures might have been cancelled
                             //job -= 10000;
                             break;
                         } else {
-                            unfinished.push(job.clone());
                             info!("[{}/{}] unexpected response, would retry this", x, total);
                         }
                     },
@@ -99,10 +98,9 @@ fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_j
 
         //check failures and retain them for retry
         pending_jobs.retain(|ref qry| {
-            unfinished.sort_unstable();
-            unfinished.binary_search(&qry.startAt).is_ok()
+            finished.sort_unstable();
+            finished.binary_search(&qry.startAt).is_err()
         });
-        info!("Total retry jobs count = {}", pending_jobs.len());
     }
 } 
 
