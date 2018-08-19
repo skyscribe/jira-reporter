@@ -1,5 +1,6 @@
 extern crate tokio_core;
 extern crate serde;
+extern crate itertools;
 
 use self::tokio_core::reactor::Core;
 use fetch::fetch::{Fetcher};
@@ -9,6 +10,8 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::fmt::format;
 use std::fs::File;
+
+use self::itertools::{Itertools, MinMaxResult};
 
 use checkers::search::perform_gen;
 use checkers::caissue::{CAIssue, CAItem};
@@ -28,10 +31,10 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
     
     let mut result: CAResult = CAResult::default(100);
     perform_gen::<CAIssue>(core, fetcher, SEARCH_URI, CA_SEARCH, fields, &mut result);
-    check_and_dump(&result);
+    analyze_result(&result);
 }
 
-pub fn check_and_dump(result_list: &CAResult) {
+pub fn analyze_result(result_list: &CAResult) {
     //dumping
     let total = result_list.issues.len();
     let mut buf_writer = BufWriter::new(File::create("ca-analysis.txt").unwrap());
@@ -42,8 +45,11 @@ pub fn check_and_dump(result_list: &CAResult) {
     info!("{}", summary);
     buf_writer.write(summary.as_bytes()).unwrap();
 
+    //dumy all items
     buf_writer.write(banner).unwrap();
     let items : Vec<CAItem> = result_list.issues.iter().map(|it| CAItem::from(it)).collect();
+    //we need to sort by feature ids to group them later
+    let items = items.into_iter().sorted_by(|it1, it2| Ord::cmp(&it1.feature_id, &it2.feature_id));
     items.iter().for_each(|it| {
         let (subid, desc) = it.get_summary();
         let line = format(format_args!("{:9}|{:20}|{:3}|{:12}|{:4}|{:4}|{:40}\n",
@@ -54,6 +60,35 @@ pub fn check_and_dump(result_list: &CAResult) {
     });
     buf_writer.write(banner).unwrap();
 
+    //calcualte lead time by features
+    buf_writer.write("@@ All planned features analysis:\n".as_bytes()).unwrap();
+    let mut planned = 0;
+    for (fid, sub_items) in &items.into_iter()
+            .filter(|it| it.start_fb < 3000 && it.end_fb < 3000)
+            .group_by(|item| item.feature_id.clone()) {
+        let times:Vec<(u32, u32)> = sub_items.map(|it| (it.start_fb, it.end_fb)).collect();
+        let (start_first, start_last) = match times.iter().map(|it| it.0).minmax() {
+            MinMaxResult::MinMax(first, last) => (first.clone(), last.clone()),
+            MinMaxResult::OneElement(x) => (x.clone(), x.clone()),
+            _ => panic!("unexpected!"),
+        };
+        let (end_first, end_last) = match times.iter().map(|it| it.1).minmax() {
+            MinMaxResult::MinMax(first, last) => (first.clone(), last.clone()),
+            MinMaxResult::OneElement(x) => (x.clone(), x.clone()),
+            _ => panic!("unexpected!"),
+        };
+
+        //actual time might be span one year only? 1901-1812+1 = 90 => 2
+        let lead_time = end_last - start_first + 1;
+        let lead_time = if lead_time > 12 { lead_time - 88} else {lead_time};
+        let line = format(format_args!("feature:{:10}, lead_time:{}, start: {} - {}, end: {} - {}, entries:{}\n",
+            fid, lead_time, start_first, start_last, end_first, end_last, times.len()));
+        buf_writer.write(line.as_bytes()).unwrap();
+        planned += 1;
+    }
+    let line = format(format_args!("@@Totally planned features:{}\n", planned));
+    buf_writer.write(line.as_bytes()).unwrap();
+    
     info!("Analysis of CA issues finished!");
 }
 
