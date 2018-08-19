@@ -8,6 +8,7 @@ extern crate futures;
 
 extern crate serde;
 use self::serde::de::DeserializeOwned;
+use self::hyper::StatusCode;
 
 use fetch::fetch::{Fetcher, RequestInfo};
 use query::query::Query;
@@ -46,16 +47,25 @@ fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_j
             //query this page
             let my_job = qry.startAt;
             let my_guard = guard_tx.clone();
-            let parser = move |json: &str| {
-                let my_result = parse_query_result::<T>(&json).ok_or_else(|| my_job);
+            let parser = move |json: &str, code: StatusCode| {
+                let my_result = match code{
+                    StatusCode::Ok => parse_query_result::<T>(&json).ok_or_else(|| my_job),
+                    _ => Err(my_job),
+                };
                 let _x = my_guard.send(my_result);
             };
 
             let post_info = RequestInfo::post(uri, &qry.to_json().unwrap());
-            let my_job = qry.startAt;
-            let my_guard = guard_tx.clone();
+            let job1 = qry.startAt;
+            let guard1 = guard_tx.clone();
             let sub_fetch = fetcher.query_with(post_info, core, Some(parser))
-                    .map_err(move |err| { let _x = my_guard.send(Err(my_job)); err});
+                    .map_err(move |err| { 
+                        //TODO: handle exceptions in graceful manner?
+                        warn!("This job {} has failed by {}", job1, err);
+                        let _x = guard1.send(Err(job1 + 10000)); 
+                        warn!("Sent to channel! Should exit the outer loop!");
+                        "failed"
+                    });
             sub_queries.push(sub_fetch);
         }
         let _x = core.run(join_all(sub_queries));
@@ -63,6 +73,7 @@ fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_j
         //collect paged sub-queries
         let mut unfinished: Vec<usize> = Vec::new();
         let total = pending_jobs.len();
+        info!("Pending jobs = {}", total);
         for  x in 1..(total+1) {
             if let Ok(process_result) = guard_rx.recv() {
                 match process_result {
@@ -71,10 +82,18 @@ fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_j
                         info!("[{}/{}] Collected a paged response!", x, total);
                     },
                     Err(job) => {
-                        unfinished.push(job.clone());
-                        info!("[{}/{}] unexpected response, would retry this", x, total);
+                        if job > 10000 {
+                            //Should also know which was not so successful?
+                            //job -= 10000;
+                            break;
+                        } else {
+                            unfinished.push(job.clone());
+                            info!("[{}/{}] unexpected response, would retry this", x, total);
+                        }
                     },
                 }
+            } else {
+                error!("recev error now!");
             }
         }
 
