@@ -15,6 +15,7 @@ use self::itertools::{Itertools, MinMaxResult};
 
 use checkers::search::perform_gen;
 use checkers::caissue::{CAIssue, CAItem};
+use checkers::utils::get_leftmost;
 
 type CAResult = QueryResult<CAIssue>;
 use checkers::caissue::{CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TYPE, 
@@ -36,20 +37,28 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
 
 pub fn analyze_result(result_list: &CAResult) {
     //dumping
-    let total = result_list.issues.len();
     let mut buf_writer = BufWriter::new(File::create("ca-analysis.txt").unwrap());
     let banner = "================================================================================================\n"
         .as_bytes();
 
-    let summary = format(format_args!("@@ CA analysis: {} issues in total\n", total));
-    info!("{}", summary);
-    buf_writer.write(summary.as_bytes()).unwrap();
-
-    //dumy all items
-    buf_writer.write(banner).unwrap();
     let items : Vec<CAItem> = result_list.issues.iter().map(|it| CAItem::from(it)).collect();
     //we need to sort by feature ids to group them later
     let items = items.into_iter().sorted_by(|it1, it2| Ord::cmp(&it1.feature_id, &it2.feature_id));
+    dump_all(&mut buf_writer, &banner, &items);
+
+    //calcualte lead time by features
+    analyze_timeline(&mut buf_writer, &items);
+    
+    info!("Analysis of CA issues finished!");
+}
+
+fn dump_all(buf_writer: &mut BufWriter<File>, banner: &[u8], items: &Vec<CAItem>){
+    let total = items.len();
+    let summary = format(format_args!("@@ CA analysis: {} issues in total\n", total));
+    info!("{}", summary);
+    buf_writer.write(summary.as_bytes()).unwrap();
+    
+    buf_writer.write(banner).unwrap();
     items.iter().for_each(|it| {
         let (subid, desc) = it.get_summary();
         let line = format(format_args!("{:9}|{:20}|{:3}|{:12}|{:4}|{:4}|{:40}\n",
@@ -59,9 +68,10 @@ pub fn analyze_result(result_list: &CAResult) {
         buf_writer.write(line.as_bytes()).unwrap();
     });
     buf_writer.write(banner).unwrap();
+}
 
-    //calcualte lead time by features
-    buf_writer.write("@@ All planned features analysis:\n".as_bytes()).unwrap();
+fn analyze_timeline(buf_writer:&mut BufWriter<File>, items: &Vec<CAItem>){
+   buf_writer.write("@@ All planned features analysis:\n".as_bytes()).unwrap();
     let mut planned = 0;
     for (fid, sub_items) in &items.into_iter()
             .filter(|it| it.start_fb < 3000 && it.end_fb < 3000)
@@ -88,15 +98,4 @@ pub fn analyze_result(result_list: &CAResult) {
     }
     let line = format(format_args!("@@Totally planned features:{}\n", planned));
     buf_writer.write(line.as_bytes()).unwrap();
-    
-    info!("Analysis of CA issues finished!");
-}
-
-pub fn get_leftmost(raw: &str, total: usize) -> &str {
-    let max = raw.find("\n").map_or(raw.len(), |x| x);
-    if max > total {
-        &raw[0..total]
-    } else {
-        &raw[0..max]
-    }
 }

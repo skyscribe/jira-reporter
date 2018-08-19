@@ -5,6 +5,7 @@ pub mod fs2checker;
 
 pub(crate) mod caissue;
 pub mod cachecker;
+pub(crate) mod utils;
 
 #[cfg(test)]
 mod test {
