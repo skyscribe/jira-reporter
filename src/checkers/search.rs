@@ -12,7 +12,7 @@ use self::serde::de::DeserializeOwned;
 use fetch::fetch::{Fetcher, RequestInfo};
 use query::query::Query;
 use query::result::{parse_query_result, QueryResult};
-use self::futures::future::join_all;
+use self::futures::future::{Future, join_all};
 
 //generic search with paged response and collect them in a generic/strongly typed manner
 pub fn perform_gen<T>(core: &mut Core, fetcher: &mut Fetcher, uri: &str, jql: &str,
@@ -52,7 +52,10 @@ fn search_and_collect<T:DeserializeOwned>(result: &mut QueryResult<T>, pending_j
             };
 
             let post_info = RequestInfo::post(uri, &qry.to_json().unwrap());
-            let sub_fetch = fetcher.query_with(post_info, core, Some(parser));
+            let my_job = qry.startAt;
+            let my_guard = guard_tx.clone();
+            let sub_fetch = fetcher.query_with(post_info, core, Some(parser))
+                    .map_err(move |err| { let _x = my_guard.send(Err(my_job)); err});
             sub_queries.push(sub_fetch);
         }
         let _x = core.run(join_all(sub_queries));

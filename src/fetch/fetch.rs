@@ -4,13 +4,13 @@ extern crate tokio_core;
 extern crate futures;
 
 use std::rc::Rc;
-use self::hyper::{Client, Request, Chunk, Method, Uri};
+use self::hyper::{Client, Request, Chunk, Method, Uri, StatusCode, Response};
 use self::hyper::client::{HttpConnector};
 use self::hyper::header::{Basic, Accept, qitem, Authorization, UserAgent, ContentType};
-use self::hyper::mime;
+use self::hyper::{mime, Error};
 use self::hyper_proxy::{Proxy, ProxyConnector, Intercept};
 use self::tokio_core::reactor::Core;
-use self::futures::future::{Future};
+use self::futures::future::{Future, err, Either, FutureResult};
 use self::futures::Stream;
 
 #[derive(Debug)]
@@ -71,25 +71,35 @@ impl Fetcher{
         //perform request now
         self.client.as_ref().unwrap()
             .request(request)
-            .and_then(|res| {
-                info!("Received response now! {}", res.status());
+            .and_then(move |res| {
                 let b = res.body().concat2();
-                trace!("Body concated!");
-                b
-            })
-            .map(move |body: Chunk| {
-                trace!("About to parse chunks!");
-                let body_str = ::std::str::from_utf8(&body).unwrap().to_string();
-                trace!("Body is: <{}>", &body_str);
-                if let Some(parser) = p {
-                    parser(&body_str);
+                match res.status() {
+                    StatusCode::Ok => Either::A({
+                        res.body().concat2()
+                            .map(move |body: Chunk| self.handle_ok(body, p))
+                    }),
+                    _ => Either::B(self.handle_nok(res)),
                 }
-                "performed".to_string()
+            }).map_err(|err|{
+                warn!("HTTP error occurred = {}!", err);
+                "failure".to_string()
             })
-            .map_err(|err| {
-                error!("Request failed by: {}", err);
-                err.to_string()
-           })
+    }
+
+    fn handle_ok<P>(&self, body: Chunk, p: Option<P>) -> String
+            where P: FnOnce(&str) -> () {
+        trace!("About to parse chunks!");
+        let body_str = ::std::str::from_utf8(body).unwrap().to_string();
+        trace!("Body is: <{}>", &body_str);
+        if let Some(parser) = p {
+            parser(&body_str);
+        }
+        "processed".to_string()
+    }
+
+    fn handle_nok(&self, res: Response) -> FutureResult<String, Error> {
+        error!("Error code is: {}", res.status());
+        err::<String, Error>(Error::Status)
     }
 
     fn prepare_proxied_client(&self, core: & mut Core) 
@@ -117,5 +127,4 @@ impl Fetcher{
             debug!("Header==={}", hdr_item);
         }
     }
-
 }
