@@ -46,7 +46,7 @@ mod test {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
-                "customfield_38750":"SW"
+                "customfield_38750":{ "value": "SW"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
@@ -57,10 +57,11 @@ mod test {
         assert_eq!(converted.team, "Team yyy");
         assert_eq!(converted.start_fb, 1808);
         assert_eq!(converted.end_fb, 1809);
+        assert_eq!(converted.activity, "SW");
     }
 
     #[test]
-    fn should_parse_desc() {
+    fn should_parse_desc_by_space() {
         let json = r#"{
             "expand" : "",
             "id": "",
@@ -81,5 +82,59 @@ mod test {
         let (sub, desc) = converted.get_summary();
         assert_eq!(sub, "Leading");
         assert_eq!(desc, "something else");
+    }
+
+    #[test]
+    fn parse_desc_by_special_chars() {
+        let json = r#"{
+            "expand" : "",
+            "id": "",
+            "self": "",
+            "key": "",    
+            "fields": {
+                "summary":"Leading\t \t something else",
+                "customfield_37381":"Feature_ID",
+                "customfield_38727":"Team yyy",
+                "customfield_38694":"1808",
+                "customfield_38693":"1809",
+                "customfield_38750":"SW"
+        }}"#;
+        let issue = serde_json::from_str::<CAIssue>(&json);
+        assert!(issue.is_ok());
+        let converted = CAItem::from(&issue.unwrap());
+        
+        let (sub, desc) = converted.get_summary();
+        assert_eq!(sub, "Leading");
+        assert_eq!(desc, "something else"); 
+    }
+
+    #[test]
+    fn should_translate_efs_type() {
+        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
+                "summary":"Leading - something else",
+                "customfield_37381":"Feature_ID",
+                "customfield_38727":"Team yyy",
+                "customfield_38694":"1808",
+                "customfield_38693":"1809",
+                "customfield_38750":{"value": "Entity Specification"}
+        }}"#;
+        let issue = serde_json::from_str::<CAIssue>(&json);
+        assert!(issue.is_ok());
+        assert_eq!(CAItem::from(&issue.unwrap()).activity, "EFS");   
+    }
+
+    #[test]
+    fn should_translate_et_type() {
+        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
+                "summary":"Leading - something else",
+                "customfield_37381":"Feature_ID",
+                "customfield_38727":"Team yyy",
+                "customfield_38694":"1808",
+                "customfield_38693":"1809",
+                "customfield_38750":{ "value": "Entity Testing"}
+        }}"#;
+        let issue = serde_json::from_str::<CAIssue>(&json);
+        assert!(issue.is_ok());
+        assert_eq!(CAItem::from(&issue.unwrap()).activity, "ET");   
     }
 }

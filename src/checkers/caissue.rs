@@ -39,7 +39,8 @@ pub struct CAItem {
     pub feature_id: String,
     pub team: String,
     pub start_fb: u32,
-    pub end_fb: u32, 
+    pub end_fb: u32,
+    pub activity: String,
 }
 
 impl CAItem {
@@ -50,15 +51,16 @@ impl CAItem {
             team: issue.get_team().to_string(),
             start_fb: convert_fb(issue.get_start()),
             end_fb: convert_fb(issue.get_end()),
+            activity: issue.get_type().to_string(),
         }
     }
 
     pub fn get_summary(&self) -> (&str, &str) {
         //split by first " " only
-        match self.summary.find(" ") {
+        match self.summary.find(|x:char| x==' ' || x == '\t') {
             Some(x) => {
                 let (first, last) = self.summary.split_at(x);
-                let skips: &[_] = &[' ', '-'];
+                let skips: &[_] = &[' ', '-', '\t'];
                 (first, last.trim_left_matches(skips))
             },
             None => (&self.summary, " "),
@@ -96,7 +98,7 @@ impl CAIssue {
     //get summary info - actual id and description
     pub fn get_summary(&self) -> (&str, &str) {
         //split by first " " only
-        match self.fields.summary.find(" ") {
+        match self.fields.summary.find(|x:char|x == ' ' || x == '\t') {
             Some(x) => self.fields.summary.split_at(x),
             None => (&self.fields.summary, " "),
         }
@@ -115,7 +117,7 @@ impl CAIssue {
                             Some(_) => "EFS",
                             None => match x.find("Entity Testing") {
                                 Some(_) => "ET",
-                                None => &NA_STRING,
+                                None => x,
                             },
                         }
                     } 
