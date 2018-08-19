@@ -94,7 +94,7 @@ mod test {
             "fields": {
                 "summary":"Leading\t \t something else",
                 "customfield_37381":"Feature_ID",
-                "customfield_38727":"Team yyy",
+                "customfield_38727":"Team yyy\t\n",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
                 "customfield_38750":"SW"
@@ -106,6 +106,7 @@ mod test {
         let (sub, desc) = converted.get_summary();
         assert_eq!(sub, "Leading");
         assert_eq!(desc, "something else"); 
+        assert_eq!(converted.team, "Team yyy");
     }
 
     #[test]

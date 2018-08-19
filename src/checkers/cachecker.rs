@@ -1,4 +1,3 @@
-
 extern crate tokio_core;
 extern crate serde;
 
@@ -36,7 +35,8 @@ pub fn check_and_dump(result_list: &CAResult) {
     //dumping
     let total = result_list.issues.len();
     let mut buf_writer = BufWriter::new(File::create("ca-analysis.txt").unwrap());
-    let banner = "==================================================================\n".as_bytes();
+    let banner = "================================================================================================\n"
+        .as_bytes();
 
     let summary = format(format_args!("@@ CA analysis: {} issues in total\n", total));
     info!("{}", summary);
@@ -46,8 +46,8 @@ pub fn check_and_dump(result_list: &CAResult) {
     let items : Vec<CAItem> = result_list.issues.iter().map(|it| CAItem::from(it)).collect();
     items.iter().for_each(|it| {
         let (subid, desc) = it.get_summary();
-        let line = format(format_args!("{:10}|{:20}|{:6}|{:15}|{:4}|{:4}|{:40}\n",
-            it.feature_id, get_leftmost(subid, 20), it.activity, get_leftmost(&it.team, 15), 
+        let line = format(format_args!("{:9}|{:20}|{:3}|{:12}|{:4}|{:4}|{:40}\n",
+            it.feature_id, get_leftmost(subid, 20), it.activity, get_leftmost(&it.team, 12), 
             it.start_fb, it.end_fb, get_leftmost(desc, 40)    
         ));
         buf_writer.write(line.as_bytes()).unwrap();

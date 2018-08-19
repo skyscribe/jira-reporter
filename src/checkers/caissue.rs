@@ -45,10 +45,11 @@ pub struct CAItem {
 
 impl CAItem {
     pub fn from(issue: &CAIssue) -> CAItem {
+        let special : &[_] = &['\t', '\n', '\r', ' '];
         CAItem {
             summary: issue.fields.summary.clone(),
             feature_id: issue.get_fid().to_string(),
-            team: issue.get_team().to_string(),
+            team: issue.get_team().trim_right_matches(special).to_string(),
             start_fb: convert_fb(issue.get_start()),
             end_fb: convert_fb(issue.get_end()),
             activity: issue.get_type().to_string(),
