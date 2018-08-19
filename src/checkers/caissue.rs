@@ -11,6 +11,7 @@ pub(crate) const CA_FIELDS_STARTFB      : &'static str = "customfield_38694";
 pub(crate) const CA_FIELDS_ENDFB        : &'static str = "customfield_38693";
 pub(crate) const CA_FIELDS_TYPE         : &'static str = "customfield_38750";
 const NA_STRING : &'static str = "NA";
+const DEFAULT_FB : u32 = 9999;
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
@@ -33,12 +34,55 @@ pub struct CAFields {
     pub activity_type: Value,
 }
 
+pub struct CAItem {
+    pub summary: String,
+    pub feature_id: String,
+    pub team: String,
+    pub start_fb: u32,
+    pub end_fb: u32, 
+}
+
+impl CAItem {
+    pub fn from(issue: &CAIssue) -> CAItem {
+        CAItem {
+            summary: issue.fields.summary.clone(),
+            feature_id: issue.get_fid().to_string(),
+            team: issue.get_team().to_string(),
+            start_fb: convert_fb(issue.get_start()),
+            end_fb: convert_fb(issue.get_end()),
+        }
+    }
+
+    pub fn get_summary(&self) -> (&str, &str) {
+        //split by first " " only
+        match self.summary.find(" ") {
+            Some(x) => {
+                let (first, last) = self.summary.split_at(x);
+                let skips: &[_] = &[' ', '-'];
+                (first, last.trim_left_matches(skips))
+            },
+            None => (&self.summary, " "),
+        }
+    }
+}
+
 pub type CAIssue = Issue<CAFields>;
 
 fn get_wrapped_string(value:&Value) -> &str {
     match value {
         Value::String(ref some) => some,
         _ => &NA_STRING,
+    }
+}
+
+fn convert_fb(value: &str) -> u32 {
+    if value == NA_STRING {
+        DEFAULT_FB.clone()
+    } else {
+        match u32::from_str_radix(value, 10) {
+            Ok(x) => x,
+            Err(_) => DEFAULT_FB.clone(),
+        }
     }
 }
 
