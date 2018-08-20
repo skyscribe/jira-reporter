@@ -17,25 +17,7 @@ use query::query::Query;
 use query::result::{parse_query_result, QueryResult};
 use self::futures::future::{Future, join_all};
 
-//generic search with paged response and collect them in a generic/strongly typed manner
-pub fn perform_gen<T>(core: &mut Core, fetcher: &mut Fetcher, uri: &str, jql: &str,
-        fields: Vec<String>, result: &mut QueryResult<T>) 
-        where T: DeserializeOwned + Clone {
-    //construct search
-    let search = Query::new(jql.to_string(), 100, fields);
-    let mut searcher = Searcher::new(core, fetcher, uri, vec![search.clone()]);
-    searcher.perform(result);
-    if result.issues.len() == 0 {
-        error!("First search failed?");
-        panic!("Unexpected ending!");
-    }
-
-    info!("Got first result now, check remaining by page info!");
-    searcher.reset_pending(search.create_remaining(result.total))
-            .perform(result);
-}
-
-struct Searcher<'a> {
+pub struct Searcher<'a> {
     core:&'a mut Core,
     fetcher: &'a mut Fetcher,
     uri: &'a str,
@@ -44,7 +26,7 @@ struct Searcher<'a> {
 }
 
 impl <'a> Searcher<'a> {
-    fn new(core: &'a mut Core, fetcher: &'a mut Fetcher, uri: &'a str, 
+    pub fn new(core: &'a mut Core, fetcher: &'a mut Fetcher, uri: &'a str, 
             pending: Vec<Query>) -> Searcher<'a> {
         Searcher{
             core: core,
@@ -55,12 +37,31 @@ impl <'a> Searcher<'a> {
         }
     }
 
+    //Search by given jql and issue fields, and collect all results in one single 
+    // result, 2-phases based search is used to calculating paging properly.
+    pub fn perform<T: DeserializeOwned>(&mut self, jql: &str, fields: Vec<String>, 
+            result: &mut QueryResult<T>) {
+        let search = Query::new(jql.to_string(), 100, fields);
+        //first search
+        self.reset_pending(vec![search.clone()])
+            .perform_parallel(result);
+        if result.issues.len() == 0 {
+            error!("First search failed?");
+            panic!("Unexpected ending!");
+        }
+
+        //remaining
+        info!("Got first result now, check remaining by page info!");
+        self.reset_pending(search.create_remaining(result.total))
+                .perform_parallel(result);
+    }
+
     fn reset_pending(&mut self, new_pending: Vec<Query>) -> &mut Searcher<'a> {
         self.pending_jobs = new_pending;
         self
     }
 
-    fn perform<T: DeserializeOwned>(&mut self, result: &mut QueryResult<T>){
+    fn perform_parallel<T: DeserializeOwned>(&mut self, result: &mut QueryResult<T>){
         let (tx, rx) = channel();
         while self.pending_jobs.len() > 0 {
             self.finished.clear();

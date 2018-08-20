@@ -13,7 +13,7 @@ use std::fs::File;
 
 use self::itertools::{Itertools, MinMaxResult};
 
-use checkers::search::perform_gen;
+use checkers::search::Searcher;
 use checkers::caissue::{CAIssue, CAItem};
 use checkers::utils::get_leftmost;
 
@@ -26,12 +26,12 @@ const CA_SEARCH : &'static str = "project=FPB AND issuetype = \"\
     Competence Area\" AND \"Competence Area\" = \"MANO MZ\"";
 
 pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
+    let mut result: CAResult = CAResult::default(100);
     let fields = vec![CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TEAM, 
             CA_FIELDS_TYPE, CA_FIELDS_STARTFB, CA_FIELDS_ENDFB].iter()
         .map(|x| x.to_string()).collect();
     
-    let mut result: CAResult = CAResult::default(100);
-    perform_gen::<CAIssue>(core, fetcher, SEARCH_URI, CA_SEARCH, fields, &mut result);
+    Searcher::new(core, fetcher, SEARCH_URI, vec![]).perform(CA_SEARCH, fields, &mut result);
     analyze_result(&result);
 }
 

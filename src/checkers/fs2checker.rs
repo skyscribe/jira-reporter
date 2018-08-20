@@ -6,7 +6,7 @@ use self::tokio_core::reactor::Core;
 use fetch::fetch::{Fetcher};
 use query::result::QueryResult;
 
-use checkers::search::perform_gen;
+use checkers::search::Searcher;
 use checkers::fs2issue::Fs2Issue;
 
 use std::io::BufWriter;
@@ -25,8 +25,8 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
     let fields = vec![FS2EE_FIELDS_SUMMARY, FS2EE_FIELDS_TITLE, FS2EE_FIELDS_EE]
                     .iter().map(|x| x.to_string()).collect();
     let mut result = Fs2Result::default(100);
-    perform_gen::<Fs2Issue>(core, fetcher, SEARCH_URI, FS2EE_SEARCH, 
-        fields, &mut result);
+    Searcher::new(core, fetcher, SEARCH_URI, vec![])
+        .perform(FS2EE_SEARCH, fields, &mut result);
     check_and_dump(&result);
 }
 
