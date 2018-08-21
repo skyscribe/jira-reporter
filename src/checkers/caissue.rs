@@ -34,13 +34,36 @@ pub struct CAFields {
     pub activity_type: Value,
 }
 
+#[derive(Ord, Eq, PartialOrd, PartialEq, Debug, Clone)]
+pub enum Activity {
+    EFS, //This is an EFS CA item
+    SW,  //This is a SW team item
+    ET,  //This is an ET item
+    NA,  //Unrecognized item!
+}
+
+use std::fmt::{Display, Formatter};
+use std::fmt;
+impl Display for Activity {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let repr = match *self {
+            Activity::EFS => "EFS",
+            Activity::SW => "SW",
+            Activity::ET => "ET",
+            Activity::NA => "NA",
+        };
+        write!(f, "{}", repr)
+    }
+}
+
+#[derive(Eq, Clone)]
 pub struct CAItem {
     pub summary: String,
     pub feature_id: String,
     pub team: String,
     pub start_fb: u32,
     pub end_fb: u32,
-    pub activity: String,
+    pub activity: Activity,
 }
 
 impl CAItem {
@@ -52,7 +75,7 @@ impl CAItem {
             team: issue.get_team().trim_right_matches(special).to_string(),
             start_fb: convert_fb(issue.get_start()),
             end_fb: convert_fb(issue.get_end()),
-            activity: issue.get_type().to_string(),
+            activity: issue.get_type(),
         }
     }
 
@@ -65,6 +88,32 @@ impl CAItem {
                 (first, last.trim_left_matches(skips))
             },
             None => (&self.summary, " "),
+        }
+    }
+}
+
+use std::cmp::Ordering;
+impl Ord for CAItem {
+    fn cmp(&self, other: &CAItem) -> Ordering {
+        self.feature_id.cmp(&other.feature_id)
+            .then(self.start_fb.cmp(&other.start_fb))
+            .then(self.end_fb.cmp(&other.end_fb))
+            .then(self.activity.cmp(&other.activity))
+    }
+}
+
+impl PartialOrd for CAItem {
+    fn partial_cmp(&self, other:&CAItem) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for CAItem {
+    fn eq(&self, other: &CAItem) -> bool {
+        if self.cmp(other) == Ordering::Equal {
+            self.summary == other.summary && self.team == other.team
+        } else {
+            false
         }
     }
 }
@@ -109,23 +158,23 @@ impl CAIssue {
         get_wrapped_string(&self.fields.feature_id)
     }
 
-    pub fn get_type(&self) -> &str {
+    pub fn get_type(&self) -> Activity {
         match self.fields.activity_type {
             Value::Object(ref obj) => {
                 match obj["value"] {
                     Value::String(ref x) => {
-                        match x.find("Entity Specification") {
-                            Some(_) => "EFS",
-                            None => match x.find("Entity Testing") {
-                                Some(_) => "ET",
-                                None => x,
-                            },
+                        if ["Entity Specification", "EFS"].iter().any(|k| x.find(k).is_some()) {
+                            Activity::EFS
+                        } else if ["Entity Testing", "ET"].iter().any(|k| x.find(k).is_some()) {
+                            Activity::ET
+                        } else {
+                            Activity::SW
                         }
-                    } 
-                    _ => &NA_STRING,
+                    }, 
+                    _ => Activity::NA, 
                 }
             },
-            _ => &NA_STRING,
+            _ => Activity::NA,
         }
     }
 

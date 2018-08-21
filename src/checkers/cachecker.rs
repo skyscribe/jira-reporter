@@ -14,7 +14,7 @@ use std::fs::File;
 use self::itertools::{Itertools, MinMaxResult};
 
 use checkers::search::Searcher;
-use checkers::caissue::{CAIssue, CAItem};
+use checkers::caissue::{CAIssue, CAItem, Activity};
 use checkers::utils::get_leftmost;
 
 type CAResult = QueryResult<CAIssue>;
@@ -46,8 +46,8 @@ pub fn analyze_result(result_list: &CAResult) {
     dump_all(&mut buf_writer, &items);
 
     //calcualte lead time by features
-    fn efs_ei(it: &CAItem) -> bool { it.activity != "NA"}
-    fn efs_sw(it: &CAItem) -> bool { it.activity == "EFS" || it.activity == "SW" }
+    fn efs_ei(it: &CAItem) -> bool { it.activity != Activity::NA}
+    fn efs_sw(it: &CAItem) -> bool { it.activity != Activity::NA && it.activity != Activity::ET }
     analyze_timeline(&mut buf_writer, &items, "EFS-EI", &mut efs_ei);
     analyze_timeline(&mut buf_writer, &items, "EFS-SW", &mut efs_sw);
     

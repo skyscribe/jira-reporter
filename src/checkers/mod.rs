@@ -11,8 +11,8 @@ pub(crate) mod utils;
 mod test {
     extern crate serde;
     extern crate serde_json;
-    use checkers::cachecker::get_leftmost;
     use checkers::caissue::*;
+    use checkers::utils::*;
 
     #[test]
     fn should_trim_newlines() {
@@ -58,7 +58,7 @@ mod test {
         assert_eq!(converted.team, "Team yyy");
         assert_eq!(converted.start_fb, 1808);
         assert_eq!(converted.end_fb, 1809);
-        assert_eq!(converted.activity, "SW");
+        assert_eq!(converted.activity, Activity::SW);
     }
 
     #[test]
@@ -74,7 +74,7 @@ mod test {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
-                "customfield_38750":"SW"
+                "customfield_38750":{ "value": "SW"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
@@ -98,7 +98,7 @@ mod test {
                 "customfield_38727":"Team yyy\t\n",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
-                "customfield_38750":"SW"
+                "customfield_38750":{ "value": "SW"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
@@ -122,7 +122,7 @@ mod test {
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
-        assert_eq!(CAItem::from(&issue.unwrap()).activity, "EFS");   
+        assert_eq!(CAItem::from(&issue.unwrap()).activity, Activity::EFS);   
     }
 
     #[test]
@@ -137,6 +137,38 @@ mod test {
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
-        assert_eq!(CAItem::from(&issue.unwrap()).activity, "ET");   
+        assert_eq!(CAItem::from(&issue.unwrap()).activity, Activity::ET);   
+    }
+
+    #[test]
+    fn should_compare_caitem_by_given_order() {
+        use std::cmp::Ordering;
+        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
+                "summary":"Leading - something else",
+                "customfield_37381":"Feature_ID",
+                "customfield_38727":"Team yyy",
+                "customfield_38694":"1808",
+                "customfield_38693":"1809",
+                "customfield_38750":{ "value": "EFS"}
+        }}"#;
+        let issue = serde_json::from_str::<CAIssue>(&json);
+        assert!(issue.is_ok());
+        let item = CAItem::from(&issue.unwrap());
+        
+        let mut item1 = item.clone();
+        item1.activity = Activity::SW;
+        assert_eq!(item.cmp(&item1), Ordering::Less);
+
+        let mut item2 = item1.clone();
+        item2.start_fb = 1809;
+        assert!(item1 < item2);
+
+        let mut item3 = item2.clone();
+        item3.end_fb = 1810;
+        assert!(item2 < item3);
+
+        let mut item4 = item3.clone();
+        item4.activity = Activity::ET;
+        assert!(item3 < item4);
     }
 }
