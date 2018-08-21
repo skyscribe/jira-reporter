@@ -52,7 +52,11 @@ impl Display for Activity {
             Activity::ET => "ET",
             Activity::NA => "NA",
         };
-        write!(f, "{}", repr)
+        if let Some(wid) = f.width() {
+            write!(f, "{:width$}", repr, width=wid)
+        } else {
+            write!(f, "{}", repr)
+        }
     }
 }
 
@@ -159,13 +163,17 @@ impl CAIssue {
     }
 
     pub fn get_type(&self) -> Activity {
+        let efs_kwds = vec!["Entity Specification", "EFS"];
+        let et_kwds = vec!["Entity Testing", "ET"];
+        let match_kwds = |kwds:Vec<&str>, x:&str| kwds.iter().any(|k| x.find(k).is_some());
+
         match self.fields.activity_type {
             Value::Object(ref obj) => {
                 match obj["value"] {
                     Value::String(ref x) => {
-                        if ["Entity Specification", "EFS"].iter().any(|k| x.find(k).is_some()) {
+                        if match_kwds(efs_kwds, x) {
                             Activity::EFS
-                        } else if ["Entity Testing", "ET"].iter().any(|k| x.find(k).is_some()) {
+                        } else if match_kwds(et_kwds, x) { 
                             Activity::ET
                         } else {
                             Activity::SW

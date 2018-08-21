@@ -41,8 +41,7 @@ pub fn analyze_result(result_list: &CAResult) {
     let mut buf_writer = BufWriter::new(File::create("ca-analysis.txt").unwrap());
 
     let items : Vec<CAItem> = result_list.issues.iter().map(|it| CAItem::from(it)).collect();
-    //we need to sort by feature ids to group them later
-    let items = items.into_iter().sorted_by(|it1, it2| Ord::cmp(&it1.feature_id, &it2.feature_id));
+    let items = items.into_iter().sorted();
     dump_all(&mut buf_writer, &items);
 
     //calcualte lead time by features
@@ -77,6 +76,7 @@ struct TimeLineInfo{
     start_last: u32,
     end_first: u32,
     end_last: u32,
+    lead_time: u32,
 }
 
 impl TimeLineInfo {
@@ -85,41 +85,61 @@ impl TimeLineInfo {
             start_first:sf, 
             start_last:sl, 
             end_first:ef, 
-            end_last:el
+            end_last:el,
+            lead_time: TimeLineInfo::get_lead_time(sf, el),
         }
     }
 
-    fn get_lead_time(&self) -> u32{
-        let lead_time = self.end_last - self.start_first + 1;
+    fn get_lead_time(start_first:u32, end_last:u32) -> u32{
+        let mut lead_time = end_last - start_first + 1;
         if lead_time > 12 { 
-            lead_time - 87 //1901 - 1813 = 1
-        } else {
-            lead_time
+            lead_time -= 87 //1901 - 1813 = 1
         } 
+        lead_time
     }
 }
 
 fn analyze_timeline<F>(buf_writer:&mut BufWriter<File>, items: &Vec<CAItem>, 
         hint: &str, issue_filter:&mut F)
             where F: FnMut(&CAItem) -> bool {
-   buf_writer.write("@@ All planned features analysis:\n".as_bytes()).unwrap();
+    let line = format(format_args!("@@ Planned features {} lead time analysis\n", hint));
+    buf_writer.write(line.as_bytes()).unwrap();
+
     let mut planned = 0;
+    let mut timelines = Vec::new();
     for (fid, sub_items) in &items.into_iter()
             .filter(|it| it.start_fb < 3000 && it.end_fb < 3000)
             .filter(|it| issue_filter(it))
             .group_by(|item| item.feature_id.clone()) {
         let times:Vec<(u32, u32)> = sub_items.map(|it| (it.start_fb, it.end_fb)).collect();
-        let timeline = calculate_timeline(&times); 
+        let timeline = calculate_timeline(&times);
 
-        let line = format(format_args!("feature:{:10}, lead_time_{}:{}, start: {} - {}, end: {} - {}, entries:{}\n",
-                fid, hint, timeline.get_lead_time(), timeline.start_first, timeline.start_last, 
+        let line = format(format_args!("@@@@@@ feature:{:10}, lead_time_{}:{}, start: {} - {}, end: {} - {}, entries:{}\n",
+                fid, hint, timeline.lead_time, timeline.start_first, timeline.start_last, 
                 timeline.end_first, timeline.end_last, times.len()));
         buf_writer.write(line.as_bytes()).unwrap();
+        timelines.push((fid, timeline));
 
         planned += 1;
     }
-    let line = format(format_args!("@@Totally planned features:{}\n", planned));
+
+    let line = format(format_args!("@@ Totally planned features:{} analyzed\n", planned));
     buf_writer.write(line.as_bytes()).unwrap();
+
+    //TOP 20% dump
+    let top_count = (planned as f32 * 0.2) as usize;
+    let line = format(format_args!("@@ Top:{}[20%] of them as below\n", top_count));
+    buf_writer.write(line.as_bytes()).unwrap();
+    timelines.into_iter()
+        .sorted_by(|tl_1, tl_2| tl_2.1.lead_time.cmp(&tl_1.1.lead_time))
+        .iter()
+        .take(top_count)
+        .for_each(|tl| {
+            let line = format(format_args!("### feature:{:10}, lead_time_{}:{}, start: {} - {}, end: {} - {}\n",
+                tl.0, hint, tl.1.lead_time, tl.1.start_first, tl.1.start_last, 
+                tl.1.end_first, tl.1.end_last));
+            buf_writer.write(line.as_bytes()).unwrap();
+        });
 }
 
 fn calculate_timeline(times: &Vec<(u32, u32)>) -> TimeLineInfo {
