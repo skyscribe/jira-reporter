@@ -80,9 +80,8 @@ mod test {
         assert!(issue.is_ok());
         let converted = CAItem::from(&issue.unwrap());
         
-        let (sub, desc) = converted.get_summary();
-        assert_eq!(sub, "Leading");
-        assert_eq!(desc, "something else");
+        assert_eq!(converted.sub_id, "Leading");
+        assert_eq!(converted.description, "something else");
     }
 
     #[test]
@@ -104,9 +103,8 @@ mod test {
         assert!(issue.is_ok());
         let converted = CAItem::from(&issue.unwrap());
         
-        let (sub, desc) = converted.get_summary();
-        assert_eq!(sub, "Leading");
-        assert_eq!(desc, "something else"); 
+        assert_eq!(converted.sub_id, "Leading");
+        assert_eq!(converted.description, "something else"); 
         assert_eq!(converted.team, "Team yyy");
     }
 
@@ -170,5 +168,34 @@ mod test {
         let mut item4 = item3.clone();
         item4.activity = Activity::ET;
         assert!(item3 < item4);
+    }
+
+    #[test]
+    fn should_compare_by_subfid_for_same_feature() {
+        use std::cmp::Ordering;
+        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
+                "summary":"Feature-A-a - something else",
+                "customfield_37381":"Feature_ID",
+                "customfield_38727":"Team yyy",
+                "customfield_38694":"1808",
+                "customfield_38693":"1809",
+                "customfield_38750":{ "value": "EFS"}
+        }}"#;
+        let issue = serde_json::from_str::<CAIssue>(&json);
+        assert!(issue.is_ok());
+        let item = CAItem::from(&issue.unwrap());
+
+        let mut item1 = item.clone();
+        item1.summary = "Feature-A-b - something else".to_string();
+        item1.reparse();
+
+        let mut item2 = item.clone();
+        item2.summary = "Feature-A-a - something else".to_string();
+        item2.activity = Activity::SW;
+        item2.reparse();
+
+        assert_eq!(item.cmp(&item1), Ordering::Less);
+        assert_eq!(item.cmp(&item2), Ordering::Less);
+        assert_eq!(item1.cmp(&item2), Ordering::Greater);
     }
 }

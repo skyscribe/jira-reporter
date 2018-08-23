@@ -63,6 +63,8 @@ impl Display for Activity {
 #[derive(Eq, Clone)]
 pub struct CAItem {
     pub summary: String,
+    pub sub_id : String, 
+    pub description: String, 
     pub feature_id: String,
     pub team: String,
     pub start_fb: u32,
@@ -73,6 +75,7 @@ pub struct CAItem {
 impl CAItem {
     pub fn from(issue: &CAIssue) -> CAItem {
         let special : &[_] = &['\t', '\n', '\r', ' '];
+        let (subid, desc) = CAItem::get_summary(&issue.fields.summary);
         CAItem {
             summary: issue.fields.summary.clone(),
             feature_id: issue.get_fid().to_string(),
@@ -80,19 +83,27 @@ impl CAItem {
             start_fb: convert_fb(issue.get_start()),
             end_fb: convert_fb(issue.get_end()),
             activity: issue.get_type(),
+            sub_id: subid.to_string(),
+            description: desc.to_string(),
         }
     }
 
-    pub fn get_summary(&self) -> (&str, &str) {
+    pub fn get_summary(summary: &String) -> (&str, &str) {
         //split by first " " only
-        match self.summary.find(|x:char| x==' ' || x == '\t') {
+        match summary.find(|x:char| x==' ' || x == '\t') {
             Some(x) => {
-                let (first, last) = self.summary.split_at(x);
+                let (first, last) = summary.split_at(x);
                 let skips: &[_] = &[' ', '-', '\t'];
                 (first, last.trim_left_matches(skips))
             },
-            None => (&self.summary, " "),
+            None => (&summary, " "),
         }
+    }
+
+    pub fn reparse(&mut self) {
+        let (subid, desc) = CAItem::get_summary(&self.summary);
+        self.sub_id = subid.to_string();
+        self.description = desc.to_string();
     }
 }
 
@@ -100,6 +111,7 @@ use std::cmp::Ordering;
 impl Ord for CAItem {
     fn cmp(&self, other: &CAItem) -> Ordering {
         self.feature_id.cmp(&other.feature_id)
+            .then(self.sub_id.cmp(&other.sub_id))
             .then(self.start_fb.cmp(&other.start_fb))
             .then(self.end_fb.cmp(&other.end_fb))
             .then(self.activity.cmp(&other.activity))

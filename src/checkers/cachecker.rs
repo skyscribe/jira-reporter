@@ -61,10 +61,9 @@ fn dump_all(buf_writer: &mut BufWriter<File>, items: &Vec<CAItem>){
     
     buf_writer.write(BANNER.as_bytes()).unwrap();
     items.iter().for_each(|it| {
-        let (subid, desc) = it.get_summary();
         let line = format(format_args!("{:9}|{:20}|{:3}|{:12}|{:4}|{:4}|{:40}\n",
-            it.feature_id, get_leftmost(subid, 20), it.activity, get_leftmost(&it.team, 12), 
-            it.start_fb, it.end_fb, get_leftmost(desc, 40)    
+            it.feature_id, get_leftmost(&it.sub_id, 20), it.activity, get_leftmost(&it.team, 12), 
+            it.start_fb, it.end_fb, get_leftmost(&it.description, 40)    
         ));
         buf_writer.write(line.as_bytes()).unwrap();
     });
