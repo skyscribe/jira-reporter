@@ -100,6 +100,7 @@ impl CAItem {
         }
     }
 
+    #[allow(dead_code)]
     pub fn reparse(&mut self) {
         let (subid, desc) = CAItem::get_summary(&self.summary);
         self.sub_id = subid.to_string();
@@ -112,9 +113,9 @@ impl Ord for CAItem {
     fn cmp(&self, other: &CAItem) -> Ordering {
         self.feature_id.cmp(&other.feature_id)
             .then(self.sub_id.cmp(&other.sub_id))
+            .then(self.activity.cmp(&other.activity))            
             .then(self.start_fb.cmp(&other.start_fb))
             .then(self.end_fb.cmp(&other.end_fb))
-            .then(self.activity.cmp(&other.activity))
     }
 }
 

@@ -198,4 +198,25 @@ mod test {
         assert_eq!(item.cmp(&item2), Ordering::Less);
         assert_eq!(item1.cmp(&item2), Ordering::Greater);
     }
+
+    #[test]
+    fn should_sort_type_first_when_schedule_is_wrong() {
+        use std::cmp::Ordering;
+        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
+                "summary":"Feature-A-a - something else",
+                "customfield_37381":"Feature_ID",
+                "customfield_38727":"Team yyy",
+                "customfield_38694":"1808",
+                "customfield_38693":"1809",
+                "customfield_38750":{ "value": "SW"}
+        }}"#;
+        let issue = serde_json::from_str::<CAIssue>(&json);
+        assert!(issue.is_ok());
+        let item = CAItem::from(&issue.unwrap());
+
+        let mut item1 = item.clone();
+        item1.end_fb = 1810;
+        item1.activity = Activity::EFS;
+        assert_eq!(item.cmp(&item1), Ordering::Greater);
+    }
 }
