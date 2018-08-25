@@ -94,7 +94,17 @@ impl CAItem {
             Some(x) => {
                 let (first, last) = summary.split_at(x);
                 let skips: &[_] = &[' ', '-', '\t'];
-                (first, last.trim_left_matches(skips))
+                let last = last.trim_left_matches(skips);
+                let ends = match first.rfind("-CP3") {
+                    Some(ending) => ending,
+                    None => first.len(),
+                };
+                let first = &first[0..ends];
+                let ends = match first.rfind("-OM") {
+                    Some(ending) => ending,
+                    None => first.len(),
+                };
+                (&first[0..ends], last) 
             },
             None => (&summary, " "),
         }
@@ -160,15 +170,6 @@ impl CAIssue {
         info!("|{}|{}|{}|{}|{}|{}|", self.fields.summary, self.fields.feature_id, 
             self.fields.activity_type, self.fields.team, self.fields.start_fb, 
             self.fields.start_fb);
-    }
-
-    //get summary info - actual id and description
-    pub fn get_summary(&self) -> (&str, &str) {
-        //split by first " " only
-        match self.fields.summary.find(|x:char|x == ' ' || x == '\t') {
-            Some(x) => self.fields.summary.split_at(x),
-            None => (&self.fields.summary, " "),
-        }
     }
 
     pub fn get_fid(&self) -> &str {

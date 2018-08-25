@@ -219,4 +219,20 @@ mod test {
         item1.activity = Activity::EFS;
         assert_eq!(item.cmp(&item1), Ordering::Greater);
     }
+
+    #[test]
+    fn should_parse_summary_with_ignored_suffix() {
+        let summary = String::from("Feature-A-a-CP3 something else");
+        let (subid, desc) = CAItem::get_summary(&summary);
+        assert_eq!(subid, "Feature-A-a");
+        assert_eq!(desc, "something else");
+    }
+
+    #[test]
+    fn should_normalize_unexpected_dual_subid() {
+        let summary = String::from("Feature-A-a-OM-CP3 something else");
+        let (subid, desc) = CAItem::get_summary(&summary);
+        assert_eq!(subid, "Feature-A-a");
+        assert_eq!(desc, "something else");
+    }
 }
