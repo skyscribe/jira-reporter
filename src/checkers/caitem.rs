@@ -64,16 +64,14 @@ impl CAItem {
                 let (first, last) = summary.split_at(x);
                 let skips: &[_] = &[' ', '-', '\t'];
                 let last = last.trim_left_matches(skips);
-                let ends = match first.rfind("-CP3") {
-                    Some(ending) => ending,
-                    None => first.len(),
-                };
-                let first = &first[0..ends];
-                let ends = match first.rfind("-OM") {
-                    Some(ending) => ending,
-                    None => first.len(),
-                };
-                (&first[0..ends], last) 
+
+                let first = get_substr_until(&first, "-CP3");
+                let first = get_substr_until(&first, "-OM");
+                let first = get_substr_until(&first, "-OAM");
+                let first = get_substr_until(&first, "-CFAM");
+                let skips: &[_] = &['-', ':'];
+                let first = first.trim_right_matches(skips);
+                (first, last)
             },
             None => (&summary, " "),
         }
@@ -113,6 +111,13 @@ fn convert_fb(value: &str) -> u32 {
             Ok(x) => x,
             Err(_) => DEFAULT_FB.clone(),
         }
+    }
+}
+
+fn get_substr_until<'a>(current: &'a str, trailing: &str) -> &'a str {
+    match current.rfind(trailing) {
+        Some(ends) => &current[0..ends],
+        _ => &current,
     }
 }
 

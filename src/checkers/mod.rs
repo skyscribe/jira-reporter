@@ -224,17 +224,44 @@ mod test {
 
     #[test]
     fn should_parse_summary_with_ignored_suffix() {
-        let summary = String::from("Feature-A-a-CP3 something else");
-        let (subid, desc) = CAItem::get_summary(&summary);
-        assert_eq!(subid, "Feature-A-a");
-        assert_eq!(desc, "something else");
+        parse_and_check_against("Feature-A-a-CP3 something else", 
+            "Feature-A-a", "something else");
     }
 
     #[test]
     fn should_normalize_unexpected_dual_subid() {
-        let summary = String::from("Feature-A-a-OM-CP3 something else");
+        parse_and_check_against("Feature-A-a-OM-CP3 something else", 
+            "Feature-A-a", "something else");
+    }
+
+    #[test]
+    fn should_normalize_variant_ca_keywrods() {
+        parse_and_check_against("Feature-A-a-OAM-CP3 something else",
+            "Feature-A-a", "something else");
+    }
+
+    #[test]
+    fn should_normalize_variant_spec_keywords() {
+        parse_and_check_against("Feature-A-a-CFAM-xx something else", 
+            "Feature-A-a", "something else");
+    }
+
+    #[test]
+    fn should_normalize_fid_without_ending_dash() {
+        parse_and_check_against("Feature-A-a2- something else", 
+            "Feature-A-a2", "something else");
+    }
+
+    #[test]
+    fn should_normalize_fid_without_ending_colon() {
+        parse_and_check_against("Feature-A-a2: something else", 
+            "Feature-A-a2", "something else");
+    }
+
+    fn parse_and_check_against(summary: &str, expected: &str, trailing: &str) {
+        let summary = String::from(summary);
         let (subid, desc) = CAItem::get_summary(&summary);
-        assert_eq!(subid, "Feature-A-a");
-        assert_eq!(desc, "something else");
+        assert_eq!(subid, expected);
+        assert_eq!(desc, trailing);
     }
 }
