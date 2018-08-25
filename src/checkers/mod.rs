@@ -4,6 +4,7 @@ pub(crate) mod fs2issue;
 pub mod fs2checker;
 
 pub(crate) mod caissue;
+pub(crate) mod caitem;
 pub mod cachecker;
 pub(crate) mod utils;
 
@@ -12,6 +13,7 @@ mod test {
     extern crate serde;
     extern crate serde_json;
     use checkers::caissue::*;
+    use checkers::caitem::*;
     use checkers::utils::*;
 
     #[test]

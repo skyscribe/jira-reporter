@@ -10,8 +10,7 @@ pub(crate) const CA_FIELDS_TEAM         : &'static str = "customfield_38727";
 pub(crate) const CA_FIELDS_STARTFB      : &'static str = "customfield_38694";
 pub(crate) const CA_FIELDS_ENDFB        : &'static str = "customfield_38693";
 pub(crate) const CA_FIELDS_TYPE         : &'static str = "customfield_38750";
-const NA_STRING : &'static str = "NA";
-const DEFAULT_FB : u32 = 9999;
+pub(crate) const NA_STRING : &'static str = "NA";
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
@@ -34,116 +33,6 @@ pub struct CAFields {
     pub activity_type: Value,
 }
 
-#[derive(Ord, Eq, PartialOrd, PartialEq, Debug, Clone)]
-pub enum Activity {
-    EFS, //This is an EFS CA item
-    SW,  //This is a SW team item
-    ET,  //This is an ET item
-    NA,  //Unrecognized item!
-}
-
-use std::fmt::{Display, Formatter};
-use std::fmt;
-impl Display for Activity {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let repr = match *self {
-            Activity::EFS => "EFS",
-            Activity::SW => "SW",
-            Activity::ET => "ET",
-            Activity::NA => "NA",
-        };
-        if let Some(wid) = f.width() {
-            write!(f, "{:width$}", repr, width=wid)
-        } else {
-            write!(f, "{}", repr)
-        }
-    }
-}
-
-#[derive(Eq, Clone)]
-pub struct CAItem {
-    pub summary: String,
-    pub sub_id : String, 
-    pub description: String, 
-    pub feature_id: String,
-    pub team: String,
-    pub start_fb: u32,
-    pub end_fb: u32,
-    pub activity: Activity,
-}
-
-impl CAItem {
-    pub fn from(issue: &CAIssue) -> CAItem {
-        let special : &[_] = &['\t', '\n', '\r', ' '];
-        let (subid, desc) = CAItem::get_summary(&issue.fields.summary);
-        CAItem {
-            summary: issue.fields.summary.clone(),
-            feature_id: issue.get_fid().to_string(),
-            team: issue.get_team().trim_right_matches(special).to_string(),
-            start_fb: convert_fb(issue.get_start()),
-            end_fb: convert_fb(issue.get_end()),
-            activity: issue.get_type(),
-            sub_id: subid.to_string(),
-            description: desc.to_string(),
-        }
-    }
-
-    pub fn get_summary(summary: &String) -> (&str, &str) {
-        //split by first " " only
-        match summary.find(|x:char| x==' ' || x == '\t') {
-            Some(x) => {
-                let (first, last) = summary.split_at(x);
-                let skips: &[_] = &[' ', '-', '\t'];
-                let last = last.trim_left_matches(skips);
-                let ends = match first.rfind("-CP3") {
-                    Some(ending) => ending,
-                    None => first.len(),
-                };
-                let first = &first[0..ends];
-                let ends = match first.rfind("-OM") {
-                    Some(ending) => ending,
-                    None => first.len(),
-                };
-                (&first[0..ends], last) 
-            },
-            None => (&summary, " "),
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn reparse(&mut self) {
-        let (subid, desc) = CAItem::get_summary(&self.summary);
-        self.sub_id = subid.to_string();
-        self.description = desc.to_string();
-    }
-}
-
-use std::cmp::Ordering;
-impl Ord for CAItem {
-    fn cmp(&self, other: &CAItem) -> Ordering {
-        self.feature_id.cmp(&other.feature_id)
-            .then(self.sub_id.cmp(&other.sub_id))
-            .then(self.activity.cmp(&other.activity))            
-            .then(self.start_fb.cmp(&other.start_fb))
-            .then(self.end_fb.cmp(&other.end_fb))
-    }
-}
-
-impl PartialOrd for CAItem {
-    fn partial_cmp(&self, other:&CAItem) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for CAItem {
-    fn eq(&self, other: &CAItem) -> bool {
-        if self.cmp(other) == Ordering::Equal {
-            self.summary == other.summary && self.team == other.team
-        } else {
-            false
-        }
-    }
-}
 
 pub type CAIssue = Issue<CAFields>;
 
@@ -151,17 +40,6 @@ fn get_wrapped_string(value:&Value) -> &str {
     match value {
         Value::String(ref some) => some,
         _ => &NA_STRING,
-    }
-}
-
-fn convert_fb(value: &str) -> u32 {
-    if value == NA_STRING {
-        DEFAULT_FB.clone()
-    } else {
-        match u32::from_str_radix(value, 10) {
-            Ok(x) => x,
-            Err(_) => DEFAULT_FB.clone(),
-        }
     }
 }
 
@@ -176,30 +54,6 @@ impl CAIssue {
         get_wrapped_string(&self.fields.feature_id)
     }
 
-    pub fn get_type(&self) -> Activity {
-        let efs_kwds = vec!["Entity Specification", "EFS"];
-        let et_kwds = vec!["Entity Testing", "ET"];
-        let match_kwds = |kwds:Vec<&str>, x:&str| kwds.iter().any(|k| x.find(k).is_some());
-
-        match self.fields.activity_type {
-            Value::Object(ref obj) => {
-                match obj["value"] {
-                    Value::String(ref x) => {
-                        if match_kwds(efs_kwds, x) {
-                            Activity::EFS
-                        } else if match_kwds(et_kwds, x) { 
-                            Activity::ET
-                        } else {
-                            Activity::SW
-                        }
-                    }, 
-                    _ => Activity::NA, 
-                }
-            },
-            _ => Activity::NA,
-        }
-    }
-
     pub fn get_start(&self) -> &str {
         get_wrapped_string(&self.fields.start_fb)
     }
@@ -210,5 +64,17 @@ impl CAIssue {
 
     pub fn get_team(&self) -> &str {
         get_wrapped_string(&self.fields.team)
+    }
+
+    pub fn get_type(&self) -> &str {
+        match self.fields.activity_type {
+            Value::Object(ref obj) => {
+                match obj["value"] {
+                    Value::String (ref x) => x,
+                    _ => NA_STRING,
+                }
+            },
+            _ => NA_STRING,
+        }
     }
 }

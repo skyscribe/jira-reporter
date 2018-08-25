@@ -14,7 +14,8 @@ use std::fs::File;
 use self::itertools::{Itertools, MinMaxResult};
 
 use checkers::search::Searcher;
-use checkers::caissue::{CAIssue, CAItem, Activity};
+use checkers::caissue::CAIssue;
+use checkers::caitem::{Activity, CAItem};
 use checkers::utils::get_leftmost;
 
 type CAResult = QueryResult<CAIssue>;
