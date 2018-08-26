@@ -57,20 +57,20 @@ impl CAItem {
         }
     }
 
-    pub fn get_summary(summary: &String) -> (&str, &str) {
-        //split by first " " only
+    pub fn get_summary(summary: &str) -> (&str, &str) {
+        //split by first " " only after trimming left spaces
+        let skips: &[_] = &[' ', '\t', '\n'];
+        let summary = summary.trim_left_matches(skips);
         match summary.find(|x:char| x==' ' || x == '\t') {
             Some(x) => {
                 let (first, last) = summary.split_at(x);
                 let skips: &[_] = &[' ', '-', '\t'];
                 let last = last.trim_left_matches(skips);
 
-                let first = get_substr_until(&first, "-CP3");
-                let first = get_substr_until(&first, "-OM");
-                let first = get_substr_until(&first, "-OAM");
-                let first = get_substr_until(&first, "-CFAM");
                 let skips: &[_] = &['-', ':'];
-                let first = first.trim_right_matches(skips);
+                let first = get_substr_until_one_of(&first, &[
+                    "-CP3", "-EFS", "-OM", "-OAM", "-CFAM", "-EI", "-Ei"
+                ]).trim_right_matches(skips);
                 (first, last)
             },
             None => (&summary, " "),
@@ -112,6 +112,14 @@ fn convert_fb(value: &str) -> u32 {
             Err(_) => DEFAULT_FB.clone(),
         }
     }
+}
+
+fn get_substr_until_one_of<'a>(current: &'a str, ignored: &[&str]) -> &'a str {
+    let mut substr = current;
+    for ignore in ignored {
+        substr = get_substr_until(&substr, ignore);
+    }
+    substr
 }
 
 fn get_substr_until<'a>(current: &'a str, trailing: &str) -> &'a str {

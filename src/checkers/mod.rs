@@ -9,6 +9,7 @@ pub mod cachecker;
 pub(crate) mod utils;
 
 #[cfg(test)]
+#[allow(non_snake_case)]
 mod test {
     extern crate serde;
     extern crate serde_json;
@@ -223,38 +224,68 @@ mod test {
     }
 
     #[test]
-    fn should_parse_summary_with_ignored_suffix() {
+    fn should_normalize_fid_dup_cp3() {
         parse_and_check_against("Feature-A-a-CP3 something else", 
             "Feature-A-a", "something else");
     }
 
     #[test]
-    fn should_normalize_unexpected_dual_subid() {
+    fn should_normalize_fid_dup_efs() {
+        parse_and_check_against("Feature-A-a-EFS something else", 
+            "Feature-A-a", "something else");
+    }
+
+    #[test]
+    fn should_normalize_fid_dup_om_cp3() {
         parse_and_check_against("Feature-A-a-OM-CP3 something else", 
             "Feature-A-a", "something else");
     }
 
     #[test]
-    fn should_normalize_variant_ca_keywrods() {
-        parse_and_check_against("Feature-A-a-OAM-CP3 something else",
+    fn should_normalize_fid_dup_oam() {
+        parse_and_check_against("Feature-A-a-OAM something else",
             "Feature-A-a", "something else");
     }
 
     #[test]
-    fn should_normalize_variant_spec_keywords() {
+    fn should_normalize_fid_dup_om() {
+        parse_and_check_against("Feature-A-a-OM something else",
+            "Feature-A-a", "something else");
+    }
+
+    #[test]
+    fn should_normalize_fid_dup_cfam() {
         parse_and_check_against("Feature-A-a-CFAM-xx something else", 
             "Feature-A-a", "something else");
     }
 
     #[test]
-    fn should_normalize_fid_without_ending_dash() {
+    fn should_normalize_fid_dup_Ei() {
+        parse_and_check_against("Feature-A-a-Ei something else", 
+            "Feature-A-a", "something else");
+    }
+
+    #[test]
+    fn should_normalize_fid_dup_EI() {
+        parse_and_check_against("Feature-A-a-EI something else", 
+            "Feature-A-a", "something else");
+    }
+
+    #[test]
+    fn should_normalize_fid_with_ending_dash() {
         parse_and_check_against("Feature-A-a2- something else", 
             "Feature-A-a2", "something else");
     }
 
     #[test]
-    fn should_normalize_fid_without_ending_colon() {
+    fn should_normalize_fid_with_ending_colon() {
         parse_and_check_against("Feature-A-a2: something else", 
+            "Feature-A-a2", "something else");
+    }
+
+    #[test]
+    fn should_normalize_fid_with_leading_spaces() {
+        parse_and_check_against("      Feature-A-a2 something else", 
             "Feature-A-a2", "something else");
     }
 
