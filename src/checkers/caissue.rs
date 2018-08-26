@@ -10,6 +10,7 @@ pub(crate) const CA_FIELDS_TEAM         : &'static str = "customfield_38727";
 pub(crate) const CA_FIELDS_STARTFB      : &'static str = "customfield_38694";
 pub(crate) const CA_FIELDS_ENDFB        : &'static str = "customfield_38693";
 pub(crate) const CA_FIELDS_TYPE         : &'static str = "customfield_38750";
+pub(crate) const CA_FIELDS_ORIG_EFF     : &'static str = "timeoriginalestimate";
 pub(crate) const NA_STRING : &'static str = "NA";
 
 #[derive(Deserialize, Debug, Clone)]
@@ -31,6 +32,9 @@ pub struct CAFields {
 
     #[serde(rename="customfield_38750")]
     pub activity_type: Value,
+
+    #[serde(rename="timeoriginalestimate")]
+    pub original_eff: Value,
 }
 
 
@@ -75,6 +79,16 @@ impl CAIssue {
                 }
             },
             _ => NA_STRING,
+        }
+    }
+
+    pub fn get_efforts(&self) -> i32 {
+        match self.fields.original_eff {
+            Value::Number(ref num) => (num.as_u64().unwrap()/3600) as i32,
+            _ => {
+                debug!("Not specififed efforts = <{}>!", self.fields.original_eff);
+                -1
+            }
         }
     }
 }

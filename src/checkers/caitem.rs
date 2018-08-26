@@ -37,6 +37,7 @@ pub struct CAItem {
     pub team: String,
     pub start_fb: u32,
     pub end_fb: u32,
+    pub efforts: i32,
     pub activity: Activity,
 }
 
@@ -54,6 +55,7 @@ impl CAItem {
             activity: activity,
             sub_id: subid.to_string(),
             description: desc.to_string(),
+            efforts: issue.get_efforts(),
         }
     }
 
