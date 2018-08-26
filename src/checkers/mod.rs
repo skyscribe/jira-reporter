@@ -50,6 +50,7 @@ mod test {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
+                "timeoriginalestimate":24000,
                 "customfield_38750":{ "value": "SW"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
@@ -77,6 +78,7 @@ mod test {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
+                "timeoriginalestimate":360000,
                 "customfield_38750":{ "value": "SW"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
@@ -100,6 +102,7 @@ mod test {
                 "customfield_38727":"Team yyy\t\n",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
+                "timeoriginalestimate":360000,
                 "customfield_38750":{ "value": "SW"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
@@ -119,6 +122,7 @@ mod test {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
+                "timeoriginalestimate":360000,
                 "customfield_38750":{"value": "Entity Specification"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
@@ -134,6 +138,7 @@ mod test {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
+                "timeoriginalestimate":360000,
                 "customfield_38750":{ "value": "Entity Testing"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
@@ -150,6 +155,7 @@ mod test {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
+                "timeoriginalestimate":360000,
                 "customfield_38750":{ "value": "EFS"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
@@ -182,6 +188,7 @@ mod test {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
+                "timeoriginalestimate":360000,
                 "customfield_38750":{ "value": "EFS"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
@@ -211,6 +218,7 @@ mod test {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
+                "timeoriginalestimate":360000,
                 "customfield_38750":{ "value": "SW"}
         }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);

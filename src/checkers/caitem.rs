@@ -61,14 +61,11 @@ impl CAItem {
 
     pub fn get_summary(summary: &str) -> (&str, &str) {
         //split by first " " only after trimming left spaces
-        let skips: &[_] = &[' ', '\t', '\n'];
-        let summary = summary.trim_left_matches(skips);
+        let summary = trim_leading_puncs(summary);
         match summary.find(|x:char| x==' ' || x == '\t') {
             Some(x) => {
                 let (first, last) = summary.split_at(x);
-                let skips: &[_] = &[' ', '-', '\t'];
-                let last = last.trim_left_matches(skips);
-                (trim_as_sub_fid(first), last)
+                (trim_as_sub_fid(first), trim_leading_puncs(last))
             },
             None => {
                 (trim_as_sub_fid(&summary), "")
@@ -111,6 +108,12 @@ fn convert_fb(value: &str) -> u32 {
             Err(_) => DEFAULT_FB.clone(),
         }
     }
+}
+
+//Trim leftmost spaces until meaningful characters
+fn trim_leading_puncs(current: &str) -> &str {
+    let skips: &[_] = &[' ', '\t', '\n', '-'];
+    current.trim_left_matches(skips)
 }
 
 //Trim duplicate information from sub-fid str
