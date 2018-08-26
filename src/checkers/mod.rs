@@ -289,6 +289,12 @@ mod test {
             "Feature-A-a2", "something else");
     }
 
+    #[test]
+    fn should_normalize_fid_with_no_desc() {
+        parse_and_check_against(" Feature-A-OM-CP3",
+            "Feature-A", "");
+    }
+
     fn parse_and_check_against(summary: &str, expected: &str, trailing: &str) {
         let summary = String::from(summary);
         let (subid, desc) = CAItem::get_summary(&summary);

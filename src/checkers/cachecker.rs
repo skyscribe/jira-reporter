@@ -38,18 +38,21 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
 }
 
 pub fn analyze_result(result_list: &CAResult) {
-    //dumping
-    let mut buf_writer = BufWriter::new(File::create("ca-analysis.txt").unwrap());
-
     let items : Vec<CAItem> = result_list.issues.iter().map(|it| CAItem::from(it)).collect();
     let items = items.into_iter().sorted();
+
+    //dumping
+    let mut buf_writer = BufWriter::new(File::create("ca-details-report.txt").unwrap());
     dump_all(&mut buf_writer, &items);
+    info!("All items' details dumped to report file!");
 
     //calcualte lead time by features
+    let mut buf_writer = BufWriter::new(File::create("ca-lead-time-report.txt").unwrap());
     fn efs_ei(it: &CAItem) -> bool { it.activity != Activity::NA}
     fn efs_sw(it: &CAItem) -> bool { it.activity != Activity::NA && it.activity != Activity::ET }
     analyze_timeline(&mut buf_writer, &items, "EFS-EI", &mut efs_ei);
     analyze_timeline(&mut buf_writer, &items, "EFS-SW", &mut efs_sw);
+    info!("All items' lead time analyzed and dump to report file!");
     
     info!("Analysis of CA issues finished!");
 }

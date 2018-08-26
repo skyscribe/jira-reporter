@@ -66,14 +66,11 @@ impl CAItem {
                 let (first, last) = summary.split_at(x);
                 let skips: &[_] = &[' ', '-', '\t'];
                 let last = last.trim_left_matches(skips);
-
-                let skips: &[_] = &['-', ':'];
-                let first = get_substr_until_one_of(&first, &[
-                    "-CP3", "-EFS", "-OM", "-OAM", "-CFAM", "-EI", "-Ei"
-                ]).trim_right_matches(skips);
-                (first, last)
+                (trim_as_sub_fid(first), last)
             },
-            None => (&summary, " "),
+            None => {
+                (trim_as_sub_fid(&summary), "")
+            },
         }
     }
 
@@ -112,6 +109,14 @@ fn convert_fb(value: &str) -> u32 {
             Err(_) => DEFAULT_FB.clone(),
         }
     }
+}
+
+//Trim duplicate information from sub-fid str
+fn trim_as_sub_fid(first: &str) -> &str {
+    let skips: &[_] = &['-', ':'];
+    get_substr_until_one_of(first, &[
+        "-CP3", "-EFS", "-OM", "-OAM", "-CFAM", "-EI", "-Ei"
+    ]).trim_right_matches(skips)
 }
 
 fn get_substr_until_one_of<'a>(current: &'a str, ignored: &[&str]) -> &'a str {
