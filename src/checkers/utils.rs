@@ -7,4 +7,3 @@ pub fn get_leftmost(raw: &str, total: usize) -> &str {
         &raw[0..max]
     }
 }
-

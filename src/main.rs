@@ -25,7 +25,7 @@ fn init_logs() {
 }
 
 fn run_reports() {
-    use jira_reporter::checkers::*;
+    use jira_reporter::checkers::{ca::cachecker, fs2::fs2checker};
 
     let mut core = Core::new().unwrap();
     let login = Rc::new(Login::new().to_basic());

@@ -7,7 +7,7 @@ use fetch::fetch::{Fetcher};
 use query::result::QueryResult;
 
 use checkers::search::Searcher;
-use checkers::fs2issue::Fs2Issue;
+use checkers::fs2::fs2issue::Fs2Issue;
 
 use std::io::BufWriter;
 use std::io::Write;
@@ -15,7 +15,7 @@ use std::fmt::format;
 use std::fs::File;
 
 type Fs2Result = QueryResult<Fs2Issue>;
-use checkers::fs2issue::{FS2EE_FIELDS_SUMMARY, FS2EE_FIELDS_EE, FS2EE_FIELDS_TITLE};
+use checkers::fs2::fs2issue::{FS2EE_FIELDS_SUMMARY, FS2EE_FIELDS_EE, FS2EE_FIELDS_TITLE};
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
 const FS2EE_SEARCH : &'static str = "project=FPB AND issuetype in (\"\
     Effort Estimation\", \"Entity Technical Analysis\") \
