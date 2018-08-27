@@ -4,7 +4,6 @@ pub mod fs2;
 pub(crate) mod utils;
 
 #[cfg(test)]
-#[allow(non_snake_case)]
 mod test {
     use checkers::utils::*;
 

@@ -1,14 +1,15 @@
 pub mod cachecker;
 pub (crate) mod caissue;
 pub (crate) mod caitem;
+pub (crate) mod timeline;
 
 #[cfg(test)]
 #[allow(non_snake_case)]
 mod test {
     extern crate serde;
     extern crate serde_json;
-    use checkers::ca::caissue::*;
-    use checkers::ca::caitem::*;
+    use super::caissue::*;
+    use super::caitem::*;
     #[test]
     fn should_convert_parsed_fields() {
         let json = r#"{
