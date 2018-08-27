@@ -1,6 +1,6 @@
 const DEFAULT_FB : u32 = 9999;
-use checkers::ca::caissue::CAIssue;
-use checkers::ca::caissue::NA_STRING;
+use super::caissue::CAIssue;
+use super::caissue::NA_STRING;
 use std::fmt::{Display, Formatter};
 use std::fmt;
 

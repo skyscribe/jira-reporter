@@ -14,13 +14,13 @@ use std::fs::File;
 use self::itertools::Itertools;
 
 use checkers::search::Searcher;
-use checkers::ca::caissue::CAIssue;
-use checkers::ca::caitem::{Activity, CAItem};
-use checkers::ca::timeline::analyze_timeline;
+use super::caissue::CAIssue;
+use super::caitem::{Activity, CAItem};
+use super::timeline::analyze_timeline;
 use checkers::utils::get_leftmost;
 
 type CAResult = QueryResult<CAIssue>;
-use checkers::ca::caissue::{CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TYPE, 
+use super::caissue::{CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TYPE, 
         CA_FIELDS_TEAM, CA_FIELDS_STARTFB, CA_FIELDS_ENDFB, CA_FIELDS_ORIG_EFF};
 
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";

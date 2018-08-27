@@ -3,7 +3,7 @@ pub(crate) mod fs2issue;
 
 #[cfg(test)]
 mod test {
-    use checkers::fs2::fs2issue::Fs2Issue;
+    use super::fs2issue::Fs2Issue;
     use query::result::*;
 
     #[test]
