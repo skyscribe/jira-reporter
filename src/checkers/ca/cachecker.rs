@@ -2,6 +2,7 @@ extern crate tokio_core;
 extern crate serde;
 extern crate itertools;
 
+use checkers::ca::carecords::parse_from;
 use self::tokio_core::reactor::Core;
 use fetch::fetch::{Fetcher};
 use query::result::QueryResult;
@@ -18,6 +19,7 @@ use super::caissue::CAIssue;
 use super::caitem::{Activity, CAItem};
 use super::timeline::analyze_timeline;
 use checkers::utils::get_leftmost;
+use checkers::records::Records;
 
 type CAResult = QueryResult<CAIssue>;
 use super::caissue::{CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TYPE, 
@@ -34,14 +36,24 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
             CA_FIELDS_STARTFB, CA_FIELDS_ENDFB, CA_FIELDS_ORIG_EFF].iter()
         .map(|x| x.to_string()).collect();
     
-    Searcher::new(core, fetcher, SEARCH_URI, vec![]).perform(CA_SEARCH, fields, &mut result);
-    analyze_result(&result);
+    use std::io::{Error, ErrorKind};
+    let items = File::open("ca-items.json")
+        .and_then(|f| parse_from(f)
+                        .map(|rcs| rcs.records)
+                        .map_err(|_x| Error::new(ErrorKind::Other, "not interested")))
+        .or_else(|_x| -> Result<Vec<CAItem>, Error> {
+            Searcher::new(core, fetcher, SEARCH_URI, vec![])
+                .perform(CA_SEARCH, fields, &mut result);
+            let items : Vec<CAItem> = result.issues.iter().map(|it| CAItem::from(it)).collect();
+            let items = items.into_iter().sorted();
+            //TODO: save to file 
+            Ok(items)
+        }).unwrap();
+    
+    analyze_result(&items);
 }
 
-pub fn analyze_result(result_list: &CAResult) {
-    let items : Vec<CAItem> = result_list.issues.iter().map(|it| CAItem::from(it)).collect();
-    let items = items.into_iter().sorted();
-
+pub fn analyze_result(items: &Vec<CAItem>) {
     //dumping
     let mut buf_writer = BufWriter::new(File::create("ca-details-report.txt").unwrap());
     dump_all(&mut buf_writer, &items);

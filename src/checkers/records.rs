@@ -3,7 +3,7 @@ extern crate serde_json;
 
 use self::serde::de::Deserialize;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub (crate) struct Records <T> {
     pub timestamp: u64, 
     
