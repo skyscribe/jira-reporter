@@ -2,6 +2,7 @@ pub(crate) mod search;
 pub mod ca;
 pub mod fs2;
 pub(crate) mod utils;
+pub(crate) mod records;
 
 #[cfg(test)]
 mod test {

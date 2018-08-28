@@ -1,10 +1,14 @@
 const DEFAULT_FB : u32 = 9999;
+
+extern crate serde;
+extern crate serde_json;
+
 use super::caissue::CAIssue;
 use super::caissue::NA_STRING;
 use std::fmt::{Display, Formatter};
 use std::fmt;
 
-#[derive(Ord, Eq, PartialOrd, PartialEq, Debug, Clone)]
+#[derive(Ord, Eq, PartialOrd, PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum Activity {
     EFS, //This is an EFS CA item
     SW,  //This is a SW team item
@@ -28,7 +32,7 @@ impl Display for Activity {
     }
 }
 
-#[derive(Eq, Clone)]
+#[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct CAItem {
     pub summary: String,
     pub sub_id : String, 

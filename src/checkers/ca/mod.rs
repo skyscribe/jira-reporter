@@ -2,6 +2,7 @@ pub mod cachecker;
 pub (crate) mod caissue;
 pub (crate) mod caitem;
 pub (crate) mod timeline;
+pub (crate) mod carecords;
 
 #[cfg(test)]
 #[allow(non_snake_case)]
