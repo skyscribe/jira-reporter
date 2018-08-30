@@ -3,7 +3,7 @@ extern crate serde_json;
 
 use checkers::records::*;
 use super::caitem::CAItem;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::time::SystemTime;
 const REFRESH_THRESHOLD: u64 = 7200;
 
@@ -32,10 +32,24 @@ pub(crate) fn parse_from<R>(reader: R) -> Result<Records<CAItem>, ParseError> wh
     }
 }
 
+//write given items into output with current timestamp
+pub (crate) fn write_to<W>(writer: W, items: Vec<CAItem>) -> 
+        (Result<String, String>, Vec<CAItem>) where W: Write {
+    let rec = Records::new(items);
+    let result = serde_json::to_writer_pretty(writer, &rec)
+        .map(|_| {
+            info!("Items updated to local cache now, timestamp={}", rec.timestamp);
+            "Ok".to_string()
+        })
+        .map_err(|err| err.to_string());
+    (result, rec.records)
+}
+
 // tests
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use checkers::ca::caissue::CAIssue;
+use super::*;
     use super::super::caitem::Activity;
     use std::time::SystemTime;
 
@@ -116,5 +130,25 @@ mod tests {
             ParseError::Json(_) => {},
             _ => {assert!(false, "should give json error while found others!");}
         }
+    }
+
+    #[test]
+    fn should_save_items_without_err() {
+        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
+                "summary":"Leading - something else",
+                "customfield_37381":"Feature_ID",
+                "customfield_38727":"Team yyy",
+                "customfield_38694":"1808",
+                "customfield_38693":"1809",
+                "timeoriginalestimate":360000,
+                "customfield_38750":{ "value": "EFS"}
+        }}"#;
+        let issue = serde_json::from_str::<CAIssue>(&json);
+        let item = CAItem::from(&issue.unwrap());
+        let items = vec![item];
+
+        let storage : Vec<u8> = Vec::new();
+        let result = write_to(storage, items);
+        assert!(result.0.is_ok());
     }
 }

@@ -2,7 +2,7 @@ extern crate tokio_core;
 extern crate serde;
 extern crate itertools;
 
-use checkers::ca::carecords::parse_from;
+use super::carecords::{parse_from, write_to};
 use self::tokio_core::reactor::Core;
 use fetch::fetch::{Fetcher};
 use query::result::QueryResult;
@@ -19,7 +19,6 @@ use super::caissue::CAIssue;
 use super::caitem::{Activity, CAItem};
 use super::timeline::analyze_timeline;
 use checkers::utils::get_leftmost;
-use checkers::records::Records;
 
 type CAResult = QueryResult<CAIssue>;
 use super::caissue::{CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TYPE, 
@@ -46,10 +45,8 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
                 .perform(CA_SEARCH, fields, &mut result);
             let items : Vec<CAItem> = result.issues.iter().map(|it| CAItem::from(it)).collect();
             let items = items.into_iter().sorted();
-            //TODO: save to file 
-            Ok(items)
+            Ok(write_to(File::create("ca-items.json").unwrap(), items).1)
         }).unwrap();
-    
     analyze_result(&items);
 }
 

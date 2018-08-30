@@ -10,3 +10,13 @@ pub (crate) struct Records <T> {
     #[serde(bound(deserialize = "T:Deserialize<'de>"))]
     pub records: Vec<T>,
 }
+
+use std::time::SystemTime;
+impl <T> Records<T> {
+    pub fn new(records: Vec<T>) -> Records<T> {
+        Records {
+            timestamp: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs(),
+            records: records,
+        }
+    }
+}
