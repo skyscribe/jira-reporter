@@ -1,5 +1,6 @@
 pub mod fs2checker;
 pub(crate) mod fs2issue;
+pub(crate) mod fs2item;
 
 #[cfg(test)]
 mod test {

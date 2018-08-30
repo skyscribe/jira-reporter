@@ -7,7 +7,7 @@ use self::tokio_core::reactor::Core;
 use fetch::fetch::{Fetcher};
 use query::result::QueryResult;
 
-use std::io::BufWriter;
+use std::io::{BufWriter, BufReader};
 use std::io::Write;
 use std::fmt::format;
 use std::fs::File;
@@ -37,7 +37,7 @@ pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
     
     use std::io::{Error, ErrorKind};
     let items = File::open("ca-items.json")
-        .and_then(|f| parse_from(f)
+        .and_then(|f| parse_from(BufReader::new(f))
                         .map(|rcs| rcs.records)
                         .map_err(|_x| Error::new(ErrorKind::Other, "not interested")))
         .or_else(|_x| -> Result<Vec<CAItem>, Error> {
