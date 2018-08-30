@@ -2,7 +2,7 @@ extern crate tokio_core;
 extern crate serde;
 extern crate itertools;
 
-use super::carecords::{parse_from, write_to};
+use super::super::persist::{parse_from, write_to};
 use self::tokio_core::reactor::Core;
 use fetch::fetch::{Fetcher};
 use query::result::QueryResult;

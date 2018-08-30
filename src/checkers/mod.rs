@@ -3,6 +3,7 @@ pub mod ca;
 pub mod fs2;
 pub(crate) mod utils;
 pub(crate) mod records;
+pub(crate) mod persist;
 
 #[cfg(test)]
 mod test {
