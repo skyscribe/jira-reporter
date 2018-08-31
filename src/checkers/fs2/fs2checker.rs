@@ -1,24 +1,9 @@
-extern crate tokio_core;
-extern crate serde;
-
-use self::tokio_core::reactor::Core;
-use fetch::fetch::{Fetcher};
-
 use super::fs2item::Fs2Item;
-use super::super::analyze::analyze;
 use checkers::utils::get_leftmost;
 
 use std::io::{BufWriter, Write};
 use std::fmt::format;
 use std::fs::File;
-
-const FS2EE_SEARCH : &'static str = "project=FPB AND issuetype in (\"\
-    Effort Estimation\", \"Entity Technical Analysis\") \
-    AND \"Competence Area\" = \"MANO MZ\"";
-
-pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
-    analyze(core, fetcher, FS2EE_SEARCH, "fs2-items.json", analyze_results);
-}
 
 pub fn analyze_results(result_list: &Vec<Fs2Item>) {
     //dumping

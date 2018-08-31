@@ -25,12 +25,20 @@ fn init_logs() {
 }
 
 fn run_reports() {
-    use jira_reporter::checkers::{ca::cachecker, fs2::fs2checker};
+    use jira_reporter::checkers::{ca::cachecker, fs2::fs2checker, analyze::analyze};
 
     let mut core = Core::new().unwrap();
     let login = Rc::new(Login::new().to_basic());
     let mut fetcher = Fetcher::new(login);
-    
-    fs2checker::perform(&mut core, &mut fetcher);
-    cachecker::perform(&mut core, &mut fetcher);
+
+    const FS2EE_SEARCH : &'static str = "project=FPB AND issuetype in (\"\
+        Effort Estimation\", \"Entity Technical Analysis\") \
+        AND \"Competence Area\" = \"MANO MZ\"";
+    analyze(&mut core, &mut fetcher, FS2EE_SEARCH, "fs2-items.json", 
+            fs2checker::analyze_results);
+
+    const CA_SEARCH : &'static str = "project=FPB AND issuetype = \"\
+        Competence Area\" AND \"Competence Area\" = \"MANO MZ\"";
+    analyze(&mut core, &mut fetcher, CA_SEARCH, "ca-items.json", 
+            cachecker::analyze_result);
 }

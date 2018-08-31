@@ -1,10 +1,4 @@
-extern crate tokio_core;
-extern crate serde;
 extern crate itertools;
-
-use super::super::analyze::analyze;
-use self::tokio_core::reactor::Core;
-use fetch::fetch::{Fetcher};
 
 use std::io::{BufWriter};
 use std::io::Write;
@@ -15,13 +9,7 @@ use super::caitem::{Activity, CAItem};
 use super::timeline::analyze_timeline;
 use checkers::utils::get_leftmost;
 
-const CA_SEARCH : &'static str = "project=FPB AND issuetype = \"\
-    Competence Area\" AND \"Competence Area\" = \"MANO MZ\"";
 pub const BANNER: &'static str = "================================================================================================\n";
-
-pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
-    analyze(core, fetcher, CA_SEARCH, "ca-items.json", analyze_result);
-}
 
 pub fn analyze_result(items: &Vec<CAItem>) {
     //dumping
