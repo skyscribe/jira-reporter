@@ -3,6 +3,7 @@ extern crate serde_json;
 
 use self::serde_json::Value;
 use query::issue::Issue;
+use super::super::datatypes::ParsedData;
 
 pub(crate) const FS2EE_FIELDS_SUMMARY  : &'static str = "summary";
 pub(crate) const FS2EE_FIELDS_TITLE    : &'static str = "customfield_38703";
@@ -48,5 +49,13 @@ impl Fs2Issue {
             Value::Number(ref efforts) => efforts.as_f64().map(|f| f as u32),
             _ => None,
         }
+    }
+}
+
+impl ParsedData for Fs2Issue {
+    //get field lists
+    fn get_field_list() -> Vec<String> {
+        vec![FS2EE_FIELDS_SUMMARY, FS2EE_FIELDS_TITLE, FS2EE_FIELDS_EE].iter()
+            .map(|x| x.to_string()).collect()
     }
 }
