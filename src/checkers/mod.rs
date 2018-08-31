@@ -4,6 +4,8 @@ pub mod fs2;
 pub(crate) mod utils;
 pub(crate) mod records;
 pub(crate) mod persist;
+pub mod analyze;
+pub(crate) mod datatypes;
 
 #[cfg(test)]
 mod test {

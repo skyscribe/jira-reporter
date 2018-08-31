@@ -3,6 +3,7 @@ extern crate serde_json;
 
 use self::serde_json::Value;
 use query::issue::Issue;
+use super::super::datatypes::ParsedData;
 
 pub(crate) const CA_FIELDS_SUMMARY      : &'static str = "summary";
 pub(crate) const CA_FIELDS_FEATUREID    : &'static str = "customfield_37381";
@@ -90,5 +91,14 @@ impl CAIssue {
                 -1
             }
         }
+    }
+}
+
+impl ParsedData for CAIssue {
+    //get field lists
+    fn get_field_list() -> Vec<String> {
+        vec![CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TEAM, CA_FIELDS_TYPE, 
+            CA_FIELDS_STARTFB, CA_FIELDS_ENDFB, CA_FIELDS_ORIG_EFF].iter()
+        .map(|x| x.to_string()).collect()
     }
 }

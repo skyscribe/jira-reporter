@@ -5,6 +5,8 @@ extern crate serde_json;
 
 use super::caissue::CAIssue;
 use super::caissue::NA_STRING;
+use super::super::datatypes::StoredData;
+
 use std::fmt::{Display, Formatter};
 use std::fmt;
 
@@ -167,5 +169,13 @@ impl PartialEq for CAItem {
         } else {
             false
         }
+    }
+}
+
+impl StoredData for CAItem {
+    type Parsed = CAIssue;
+
+    fn parse_from(issue: &Self::Parsed) -> Self {
+        Self::from(issue)
     }
 }

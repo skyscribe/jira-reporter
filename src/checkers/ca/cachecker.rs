@@ -2,52 +2,25 @@ extern crate tokio_core;
 extern crate serde;
 extern crate itertools;
 
-use super::super::persist::{parse_from, write_to};
+use super::super::analyze::analyze;
 use self::tokio_core::reactor::Core;
 use fetch::fetch::{Fetcher};
-use query::result::QueryResult;
 
-use std::io::{BufWriter, BufReader};
+use std::io::{BufWriter};
 use std::io::Write;
 use std::fmt::format;
 use std::fs::File;
 
-use self::itertools::Itertools;
-
-use checkers::search::Searcher;
-use super::caissue::CAIssue;
 use super::caitem::{Activity, CAItem};
 use super::timeline::analyze_timeline;
 use checkers::utils::get_leftmost;
 
-type CAResult = QueryResult<CAIssue>;
-use super::caissue::{CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TYPE, 
-        CA_FIELDS_TEAM, CA_FIELDS_STARTFB, CA_FIELDS_ENDFB, CA_FIELDS_ORIG_EFF};
-
-const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
 const CA_SEARCH : &'static str = "project=FPB AND issuetype = \"\
     Competence Area\" AND \"Competence Area\" = \"MANO MZ\"";
 pub const BANNER: &'static str = "================================================================================================\n";
 
 pub fn perform(core: &mut Core, fetcher: &mut Fetcher) {
-    let mut result: CAResult = CAResult::default(100);
-    let fields = vec![CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TEAM, CA_FIELDS_TYPE, 
-            CA_FIELDS_STARTFB, CA_FIELDS_ENDFB, CA_FIELDS_ORIG_EFF].iter()
-        .map(|x| x.to_string()).collect();
-    
-    use std::io::{Error, ErrorKind};
-    let items = File::open("ca-items.json")
-        .and_then(|f| parse_from(BufReader::new(f))
-                        .map(|rcs| rcs.records)
-                        .map_err(|_x| Error::new(ErrorKind::Other, "not interested")))
-        .or_else(|_x| -> Result<Vec<CAItem>, Error> {
-            Searcher::new(core, fetcher, SEARCH_URI, vec![])
-                .perform(CA_SEARCH, fields, &mut result);
-            let items : Vec<CAItem> = result.issues.iter().map(|it| CAItem::from(it)).collect();
-            let items = items.into_iter().sorted();
-            Ok(write_to(File::create("ca-items.json").unwrap(), items).1)
-        }).unwrap();
-    analyze_result(&items);
+    analyze(core, fetcher, CA_SEARCH, "ca-items.json", analyze_result);
 }
 
 pub fn analyze_result(items: &Vec<CAItem>) {
