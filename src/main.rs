@@ -31,14 +31,19 @@ fn run_reports() {
     let login = Rc::new(Login::new().to_basic());
     let mut fetcher = Fetcher::new(login);
 
-    const FS2EE_SEARCH : &'static str = "project=FPB AND issuetype in (\"\
-        Effort Estimation\", \"Entity Technical Analysis\") \
-        AND \"Competence Area\" = \"MANO MZ\"";
-    analyze(&mut core, &mut fetcher, FS2EE_SEARCH, "fs2-items.json", 
-            fs2checker::analyze_results);
+    let handle = core.handle();
+    let analysis = futures::future::lazy(move || {
+        const FS2EE_SEARCH : &'static str = "project=FPB AND issuetype in (\"\
+            Effort Estimation\", \"Entity Technical Analysis\") \
+            AND \"Competence Area\" = \"MANO MZ\"";
+        analyze(&handle, &mut fetcher, FS2EE_SEARCH, "fs2-items.json", 
+                fs2checker::analyze_results);
 
-    const CA_SEARCH : &'static str = "project=FPB AND issuetype = \"\
-        Competence Area\" AND \"Competence Area\" = \"MANO MZ\"";
-    analyze(&mut core, &mut fetcher, CA_SEARCH, "ca-items.json", 
-            cachecker::analyze_result);
+        const CA_SEARCH : &'static str = "project=FPB AND issuetype = \"\
+            Competence Area\" AND \"Competence Area\" = \"MANO MZ\"";
+        analyze(&handle, &mut fetcher, CA_SEARCH, "ca-items.json", 
+                cachecker::analyze_result);
+        futures::future::ok::<u32, u32>(1)
+    });
+    core.run(analysis).unwrap();
 }

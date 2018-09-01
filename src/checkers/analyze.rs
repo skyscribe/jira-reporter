@@ -3,7 +3,7 @@ extern crate serde;
 extern crate itertools;
 
 use super::persist::{parse_from, write_to};
-use self::tokio_core::reactor::Core;
+use self::tokio_core::reactor::Handle;
 use fetch::fetch::{Fetcher};
 use query::result::QueryResult;
 use self::serde::de::DeserializeOwned;
@@ -19,10 +19,10 @@ use super::datatypes::{ParsedData, StoredData};
 
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
 //skeleton function for fetch data and do analysis
-pub fn analyze<T, R, F>(core: &mut Core, fetcher: &mut Fetcher, search:&'static str, 
+pub fn analyze<T, R, F>(handle: &Handle, fetcher: &mut Fetcher, search:&'static str, 
             cache_fname:&str, analyzer: F)
         where T:DeserializeOwned+Serialize+StoredData<Parsed=R>+Ord, 
-              R:DeserializeOwned+ParsedData, F: Fn(&Vec<T>) -> () {
+              R:DeserializeOwned+ParsedData+'static, F: Fn(&Vec<T>) -> () {
     let mut result = QueryResult::<R>::default(100);
     let fields = R::get_field_list();
     
@@ -32,7 +32,7 @@ pub fn analyze<T, R, F>(core: &mut Core, fetcher: &mut Fetcher, search:&'static 
                         .map(|rcs| rcs.records)
                         .map_err(|_x| Error::new(ErrorKind::Other, "not interested")))
         .or_else(|_x| -> Result<Vec<T>, Error> {
-            Searcher::new(core, fetcher, SEARCH_URI, vec![])
+            Searcher::new(handle.clone(), fetcher, SEARCH_URI, vec![])
                 .perform(search, fields, &mut result);
             let items : Vec<T> = result.issues.iter().map(|it| T::parse_from(it)).collect();
             let items = items.into_iter().sorted();

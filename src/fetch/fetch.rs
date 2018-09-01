@@ -9,7 +9,7 @@ use self::hyper::client::{HttpConnector};
 use self::hyper::header::{Basic, Accept, qitem, Authorization, UserAgent, ContentType};
 use self::hyper::{mime, StatusCode, Error};
 use self::hyper_proxy::{Proxy, ProxyConnector, Intercept};
-use self::tokio_core::reactor::Core;
+use self::tokio_core::reactor::Handle;
 use self::futures::future::{Future, ok};
 use self::futures::Stream;
 
@@ -52,12 +52,12 @@ impl Fetcher{
         }
     }
 
-    pub fn query_with<P>(&mut self, req: RequestInfo, core:&mut Core, p: Option<P>) 
+    pub fn query_with<P>(&mut self, req: RequestInfo, handle:Handle, p: Option<P>) 
             -> impl Future<Item=String, Error=Error>
                 where P: FnOnce(&str, StatusCode) -> () {
         if self.client.is_none() {
             info!("Creating client connection since not exist yet!");
-            self.client = Some(self.prepare_proxied_client(core));
+            self.client = Some(self.prepare_proxied_client(handle));
         }
 
         info!("Request for {}", &req.uri);
@@ -92,9 +92,8 @@ impl Fetcher{
             })
     }
 
-    fn prepare_proxied_client(&self, core: & mut Core) 
+    fn prepare_proxied_client(&self, handle: Handle) 
             -> Client<ProxyConnector<HttpConnector>> {
-        let handle = core.handle();
         let proxy = {
             let proxy_uri = "http://10.144.1.10:8080".parse().unwrap();
             let mut proxy = Proxy::new(Intercept::All,  proxy_uri);
