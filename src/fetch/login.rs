@@ -49,7 +49,7 @@ impl Login {
 
     pub fn to_basic(&self) -> Basic {
         //we just show password as a series of stars
-        info!("Now, user=<{}>, pwd=<{}>", self.username, String::from_utf8(
+        info!("Prepared login details now with user=<{}>, pwd=<{}>", self.username, String::from_utf8(
                 vec![42; self.password.len()]).unwrap());
         Basic {
             username: self.username.clone().into(),

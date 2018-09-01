@@ -15,10 +15,12 @@ fn main() {
 }
 
 fn init_logs() {
+    use flexi_logger::{Duplicate, opt_format};
     flexi_logger::Logger::with_env_or_str("info")
-        .format(flexi_logger::opt_format)
+        .format(opt_format)
         .log_to_file()
         .print_message()
+        .duplicate_to_stderr(Duplicate::Info)
         .directory("logs")
         .start()
         .unwrap_or_else(|_e| panic!("Start log failed!"));
