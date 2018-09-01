@@ -8,6 +8,9 @@ pub struct Fs2Item {
     pub summary: String,
     pub efforts: i32,
     pub title: String,
+    pub release: String,
+    pub description: String,
+    pub status: String,
 }
 
 impl Fs2Item {
@@ -16,6 +19,9 @@ impl Fs2Item {
             summary: raw.fields.summary.clone(),
             title: raw.get_title_display(),
             efforts: raw.get_efforts().map(|x| x as i32).unwrap_or(-1),
+            release: raw.get_release(),
+            description: raw.get_description(),
+            status: raw.get_status().clone(),
         }
     }
 

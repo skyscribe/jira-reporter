@@ -37,6 +37,7 @@ impl Display for Activity {
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct CAItem {
     pub summary: String,
+    pub key: String,
     pub sub_id : String, 
     pub description: String, 
     pub feature_id: String,
@@ -54,6 +55,7 @@ impl CAItem {
         let activity = CAItem::get_type(issue.get_type());
         CAItem {
             summary: issue.fields.summary.clone(),
+            key: issue.key.clone(),
             feature_id: issue.get_fid().to_string(),
             team: issue.get_team().trim_right_matches(special).to_string(),
             start_fb: convert_fb(issue.get_start()),

@@ -36,9 +36,10 @@ fn dump_all(buf_writer: &mut BufWriter<File>, items: &Vec<CAItem>){
     
     buf_writer.write(BANNER.as_bytes()).unwrap();
     items.iter().for_each(|it| {
-        let line = format(format_args!("{:9}|{:20}|{:3}|{:12}|{:4}|{:4}|{:4}|{:40}\n",
-            it.feature_id, get_leftmost(&it.sub_id, 20), it.activity, get_leftmost(&it.team, 12), 
-            it.start_fb, it.end_fb, it.efforts, get_leftmost(&it.description, 40)    
+        let line = format(format_args!("{:9}|{:15}|{:10}|{:3}|{:12}|{:4}|{:4}|{:4}|{:60}\n",
+            it.feature_id, get_leftmost(&it.sub_id, 15), it.key, it.activity, 
+            get_leftmost(&it.team, 12), it.start_fb, it.end_fb, it.efforts, 
+            get_leftmost(&it.description, 40)    
         ));
         buf_writer.write(line.as_bytes()).unwrap();
     });
@@ -46,7 +47,7 @@ fn dump_all(buf_writer: &mut BufWriter<File>, items: &Vec<CAItem>){
 
     let total_efforts = items.iter().map(|it| if it.efforts > 0 {it.efforts} else {0}).sum::<i32>();
     let unestimated = items.iter().filter(|it| it.efforts > 0).count();
-    buf_writer.write(format(format_args!("Total efforts:{}, unestimated: {}/[{:.1}%]", 
-            total_efforts, unestimated, (unestimated as f32)/(total as f32)*100.0
+    buf_writer.write(format(format_args!("Total efforts:{}, unestimated: {}/{}[{:.1}%]", 
+            total_efforts, unestimated, total, (unestimated as f32)/(total as f32)*100.0
         )).as_bytes()).unwrap();
 }
