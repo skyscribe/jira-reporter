@@ -103,7 +103,9 @@ mod tests {
                     "start_fb": 1809,
                     "end_fb": 1809,
                     "efforts": 100,
-                    "activity": "SW"
+                    "target": "PT4",
+                    "activity": "SW",
+                    "key": "don't care"
                 }
             ]
         }"#
@@ -131,6 +133,7 @@ mod tests {
                 "customfield_38727":"Team yyy",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
+                "customfield_38723":"PT4",
                 "timeoriginalestimate":360000,
                 "customfield_38750":{ "value": "EFS"}
         }}"#;

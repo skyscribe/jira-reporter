@@ -5,14 +5,15 @@ use self::serde_json::Value;
 use query::issue::Issue;
 use super::super::datatypes::ParsedData;
 
-pub(crate) const CA_FIELDS_SUMMARY      : &'static str = "summary";
-pub(crate) const CA_FIELDS_FEATUREID    : &'static str = "customfield_37381";
-pub(crate) const CA_FIELDS_TEAM         : &'static str = "customfield_38727";
-pub(crate) const CA_FIELDS_STARTFB      : &'static str = "customfield_38694";
-pub(crate) const CA_FIELDS_ENDFB        : &'static str = "customfield_38693";
-pub(crate) const CA_FIELDS_TYPE         : &'static str = "customfield_38750";
-pub(crate) const CA_FIELDS_ORIG_EFF     : &'static str = "timeoriginalestimate";
-pub(crate) const NA_STRING : &'static str = "NA";
+const CA_FIELDS_SUMMARY     : &'static str = "summary";
+const CA_FIELDS_FEATUREID   : &'static str = "customfield_37381";
+const CA_FIELDS_TEAM        : &'static str = "customfield_38727";
+const CA_FIELDS_STARTFB     : &'static str = "customfield_38694";
+const CA_FIELDS_ENDFB       : &'static str = "customfield_38693";
+const CA_FIELDS_TYPE        : &'static str = "customfield_38750";
+const CA_FIELDS_ORIG_EFF    : &'static str = "timeoriginalestimate";
+const CA_FIELDS_TARGET      : &'static str = "customfield_38723";
+pub const NA_STRING         : &'static str = "NA";
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
@@ -36,6 +37,9 @@ pub struct CAFields {
 
     #[serde(rename="timeoriginalestimate")]
     pub original_eff: Value,
+
+    #[serde(rename="customfield_38723")]
+    pub target_pt: Value,
 }
 
 
@@ -71,6 +75,10 @@ impl CAIssue {
         get_wrapped_string(&self.fields.team)
     }
 
+    pub fn get_target(&self) -> &str {
+        get_wrapped_string(&self.fields.target_pt)
+    }
+
     pub fn get_type(&self) -> &str {
         match self.fields.activity_type {
             Value::Object(ref obj) => {
@@ -98,7 +106,8 @@ impl ParsedData for CAIssue {
     //get field lists
     fn get_field_list() -> Vec<String> {
         vec![CA_FIELDS_FEATUREID, CA_FIELDS_SUMMARY, CA_FIELDS_TEAM, CA_FIELDS_TYPE, 
-            CA_FIELDS_STARTFB, CA_FIELDS_ENDFB, CA_FIELDS_ORIG_EFF].iter()
+             CA_FIELDS_STARTFB, CA_FIELDS_ENDFB, CA_FIELDS_ORIG_EFF, CA_FIELDS_TARGET]
+        .iter()
         .map(|x| x.to_string()).collect()
     }
 }

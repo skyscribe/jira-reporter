@@ -12,20 +12,7 @@ mod test {
     use super::caitem::*;
     #[test]
     fn should_convert_parsed_fields() {
-        let json = r#"{
-            "expand" : "",
-            "id": "",
-            "self": "",
-            "key": "",    
-            "fields": {
-                "summary":"Feature_ID_xxx_yyy",
-                "customfield_37381":"Feature_ID",
-                "customfield_38727":"Team yyy",
-                "customfield_38694":"1808",
-                "customfield_38693":"1809",
-                "timeoriginalestimate":24000,
-                "customfield_38750":{ "value": "SW"}
-        }}"#;
+        let json = get_test_json("Feature_ID_xxx_yyy", "SW", "Team yyy");
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
         
@@ -38,22 +25,29 @@ mod test {
         assert_eq!(converted.activity, Activity::SW);
     }
 
-    #[test]
-    fn should_parse_desc_by_space() {
-        let json = r#"{
+    fn get_test_json(summary:&str, activity: &str, team: &str) -> String {
+        let hdr = r#"{
             "expand" : "",
             "id": "",
             "self": "",
             "key": "",    
             "fields": {
-                "summary":"Leading - something else",
+                "summary": ""#;
+        String::from(hdr) + summary + r#"",
                 "customfield_37381":"Feature_ID",
-                "customfield_38727":"Team yyy",
+                "customfield_38727":""# + team + r#"",
+                "customfield_38723":"PT4",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
-                "timeoriginalestimate":360000,
-                "customfield_38750":{ "value": "SW"}
-        }}"#;
+                "timeoriginalestimate":24000,
+                "customfield_38750":{ "value": ""#
+        + activity + r#""}
+        }}"#
+    }
+
+    #[test]
+    fn should_parse_desc_by_space() {
+        let json = get_test_json("Leading - something else", "SW", "X");
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
         let converted = CAItem::from(&issue.unwrap());
@@ -64,22 +58,10 @@ mod test {
 
     #[test]
     fn parse_desc_by_special_chars() {
-        let json = r#"{
-            "expand" : "",
-            "id": "",
-            "self": "",
-            "key": "",    
-            "fields": {
-                "summary":"Leading\t \t something else",
-                "customfield_37381":"Feature_ID",
-                "customfield_38727":"Team yyy\t\n",
-                "customfield_38694":"1808",
-                "customfield_38693":"1809",
-                "timeoriginalestimate":360000,
-                "customfield_38750":{ "value": "SW"}
-        }}"#;
+        //Note raw string is needed to pass in "special characters"
+        let json = get_test_json(r#"Leading \t \t something else"#, "SW", r#"Team yyy\t\t"#);
         let issue = serde_json::from_str::<CAIssue>(&json);
-        assert!(issue.is_ok());
+        assert!(issue.is_ok(), "Parsing result:{:?}", issue);
         let converted = CAItem::from(&issue.unwrap());
         
         assert_eq!(converted.sub_id, "Leading");
@@ -89,15 +71,7 @@ mod test {
 
     #[test]
     fn should_translate_efs_type() {
-        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
-                "summary":"Leading - something else",
-                "customfield_37381":"Feature_ID",
-                "customfield_38727":"Team yyy",
-                "customfield_38694":"1808",
-                "customfield_38693":"1809",
-                "timeoriginalestimate":360000,
-                "customfield_38750":{"value": "Entity Specification"}
-        }}"#;
+        let json = get_test_json("Leading - something else", "Entity Specification", "X");
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
         assert_eq!(CAItem::from(&issue.unwrap()).activity, Activity::EFS);   
@@ -105,15 +79,7 @@ mod test {
 
     #[test]
     fn should_translate_et_type() {
-        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
-                "summary":"Leading - something else",
-                "customfield_37381":"Feature_ID",
-                "customfield_38727":"Team yyy",
-                "customfield_38694":"1808",
-                "customfield_38693":"1809",
-                "timeoriginalestimate":360000,
-                "customfield_38750":{ "value": "Entity Testing"}
-        }}"#;
+        let json = get_test_json("Leading - something else", "Entity Testing", "X");
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
         assert_eq!(CAItem::from(&issue.unwrap()).activity, Activity::ET);   
@@ -121,16 +87,8 @@ mod test {
 
     #[test]
     fn should_compare_caitem_by_given_order() {
+        let json = get_test_json("Leading - something else", "EFS", "X");
         use std::cmp::Ordering;
-        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
-                "summary":"Leading - something else",
-                "customfield_37381":"Feature_ID",
-                "customfield_38727":"Team yyy",
-                "customfield_38694":"1808",
-                "customfield_38693":"1809",
-                "timeoriginalestimate":360000,
-                "customfield_38750":{ "value": "EFS"}
-        }}"#;
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
         let item = CAItem::from(&issue.unwrap());
@@ -155,15 +113,7 @@ mod test {
     #[test]
     fn should_compare_by_subfid_for_same_feature() {
         use std::cmp::Ordering;
-        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
-                "summary":"Feature-A-a - something else",
-                "customfield_37381":"Feature_ID",
-                "customfield_38727":"Team yyy",
-                "customfield_38694":"1808",
-                "customfield_38693":"1809",
-                "timeoriginalestimate":360000,
-                "customfield_38750":{ "value": "EFS"}
-        }}"#;
+        let json = get_test_json("Feature-A-a - something else", "EFS", "X");
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
         let item = CAItem::from(&issue.unwrap());
@@ -185,15 +135,7 @@ mod test {
     #[test]
     fn should_sort_type_first_when_schedule_is_wrong() {
         use std::cmp::Ordering;
-        let json = r#"{"expand" : "", "id": "", "self": "", "key": "", "fields": {
-                "summary":"Feature-A-a - something else",
-                "customfield_37381":"Feature_ID",
-                "customfield_38727":"Team yyy",
-                "customfield_38694":"1808",
-                "customfield_38693":"1809",
-                "timeoriginalestimate":360000,
-                "customfield_38750":{ "value": "SW"}
-        }}"#;
+        let json = get_test_json("Leading - something else", "SW", "X");
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
         let item = CAItem::from(&issue.unwrap());

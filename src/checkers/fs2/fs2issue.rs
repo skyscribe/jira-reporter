@@ -7,12 +7,12 @@ use query::issue::Issue;
 use super::super::datatypes::ParsedData;
 use self::itertools::Itertools;
 
-pub(crate) const FS2EE_FIELDS_SUMMARY  : &'static str = "summary";
-pub(crate) const FS2EE_FIELDS_DESCRIPT : &'static str = "description";
-pub(crate) const FS2EE_FIELDS_STATUS   : &'static str = "status";
-pub(crate) const FS2EE_FIELDS_TITLE    : &'static str = "customfield_38703";
-pub(crate) const FS2EE_FIELDS_EE       : &'static str = "customfield_38692";
-pub(crate) const FS2EE_FIELDS_RELEASE  : &'static str = "customfield_38724";
+const FS2EE_FIELDS_SUMMARY  : &'static str = "summary";
+const FS2EE_FIELDS_DESCRIPT : &'static str = "description";
+const FS2EE_FIELDS_STATUS   : &'static str = "status";
+const FS2EE_FIELDS_TITLE    : &'static str = "customfield_38703";
+const FS2EE_FIELDS_EE       : &'static str = "customfield_38692";
+const FS2EE_FIELDS_RELEASE  : &'static str = "customfield_38724";
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]

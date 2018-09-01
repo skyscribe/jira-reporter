@@ -22,6 +22,9 @@ mod test {
                     "key" : "FPB-12512",
                     "fields" : {
                         "summary":"5GC001000-EE-MANO MZ",
+                        "status" : {"name": "Done"},
+                        "description": "some desc",
+                        "customfield_38724" : [{"value":"rel1"}],
                         "customfield_38692":60.0,
                         "customfield_38703":"20 MHz cell bandwidth for cmWave"
                     }
@@ -33,6 +36,9 @@ mod test {
                     "key" : "FPB-12490",
                     "fields" : {
                         "summary":"5GC0010xxx-EE-MANO MZ",
+                        "status" : {"name": "Done"},
+                        "description": "some desc",
+                        "customfield_38724" : [{"value":"rel1"}],
                         "customfield_38692":null,
                         "customfield_38703":"What ever in fp"
                     }
@@ -45,6 +51,9 @@ mod test {
                     "fields" : {
                         "summary":"5GC0010xxx-EE-MANO MZ",
                         "customfield_38692":0.0,
+                        "status" : {"name": "Done"},
+                        "description": "some desc",
+                        "customfield_38724" : [{"value":"rel1"}],
                         "customfield_38703":"What ever in fp"
                     }
                 }
