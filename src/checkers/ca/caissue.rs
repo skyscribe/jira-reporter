@@ -4,6 +4,7 @@ extern crate serde_json;
 use self::serde_json::Value;
 use query::issue::Issue;
 use super::super::datatypes::ParsedData;
+use super::super::utils::*;
 
 const CA_FIELDS_SUMMARY     : &'static str = "summary";
 const CA_FIELDS_FEATUREID   : &'static str = "customfield_37381";
@@ -13,7 +14,6 @@ const CA_FIELDS_ENDFB       : &'static str = "customfield_38693";
 const CA_FIELDS_TYPE        : &'static str = "customfield_38750";
 const CA_FIELDS_ORIG_EFF    : &'static str = "timeoriginalestimate";
 const CA_FIELDS_TARGET      : &'static str = "customfield_38723";
-pub const NA_STRING         : &'static str = "NA";
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]
@@ -45,13 +45,6 @@ pub struct CAFields {
 
 pub type CAIssue = Issue<CAFields>;
 
-fn get_wrapped_string(value:&Value) -> &str {
-    match value {
-        Value::String(ref some) => some,
-        _ => &NA_STRING,
-    }
-}
-
 impl CAIssue {
     pub fn log(&self) {
         info!("|{}|{}|{}|{}|{}|{}|", self.fields.summary, self.fields.feature_id, 
@@ -60,23 +53,23 @@ impl CAIssue {
     }
 
     pub fn get_fid(&self) -> &str {
-        get_wrapped_string(&self.fields.feature_id)
+        get_wrapped_or_na(&self.fields.feature_id)
     }
 
     pub fn get_start(&self) -> &str {
-        get_wrapped_string(&self.fields.start_fb)
+        get_wrapped_or_na(&self.fields.start_fb)
     }
 
     pub fn get_end(&self) -> &str {
-        get_wrapped_string(&self.fields.end_fb)
+        get_wrapped_or_na(&self.fields.end_fb)
     }
 
     pub fn get_team(&self) -> &str {
-        get_wrapped_string(&self.fields.team)
+        get_wrapped_or_na(&self.fields.team)
     }
 
     pub fn get_target(&self) -> &str {
-        get_wrapped_string(&self.fields.target_pt)
+        get_wrapped_or_na(&self.fields.target_pt)
     }
 
     pub fn get_type(&self) -> &str {

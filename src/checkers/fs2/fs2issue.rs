@@ -5,7 +5,7 @@ extern crate itertools;
 use self::serde_json::Value;
 use query::issue::Issue;
 use super::super::datatypes::ParsedData;
-use self::itertools::Itertools;
+use super::super::utils::*;
 
 const FS2EE_FIELDS_SUMMARY  : &'static str = "summary";
 const FS2EE_FIELDS_DESCRIPT : &'static str = "description";
@@ -37,15 +37,12 @@ impl Fs2Issue {
     pub fn get_efforts_display(&self) -> String {
         match self.get_efforts() {
             Some(ref effort) => effort.to_string(),
-            None => String::from("NA"),
+            None => String::from(NA_STRING),
         }
     }
 
     pub fn get_title_display(&self) -> String {
-        match self.fields.title {
-            Value::String(ref some) => some.clone(),
-            _ => "NA".to_string(), 
-        }
+        get_wrapped_or_na(&self.fields.title).to_string()
     }
 
     //check if we have set efforts
@@ -70,33 +67,12 @@ impl Fs2Issue {
 
     //get release string
     pub fn get_release(&self) -> String {
-        //println!("{} release is: {}", self.fields.summary, self.fields.release);
-        match self.fields.release {
-            Value::Array(ref releases) => {
-                releases.iter()
-                    .map(|it| get_wrapped_object_attr(&it, "value").to_string())
-                    .filter(|it| it != "")
-                    .join(",")
-            },
-            _ => "".to_string(),
-        }
+        get_releases_from(&self.fields.release)
     }
 
     //get status string per json map
     pub fn get_status(&self) -> String {
         get_wrapped_object_attr(&self.fields.status, "name").to_string()
-    }
-}
-
-fn get_wrapped_object_attr<'a>(value:&'a Value, attr: &str) -> &'a str {
-    match value {
-        Value::Object(ref obj) => {
-            match obj[attr] {
-                Value::String(ref x) => x,
-                _ => "",
-            } 
-        },
-        _ => "",
     }
 }
 

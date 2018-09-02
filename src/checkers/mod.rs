@@ -1,6 +1,7 @@
 pub(crate) mod search;
 pub mod ca;
 pub mod fs2;
+pub mod sys;
 pub(crate) mod utils;
 pub(crate) mod records;
 pub(crate) mod persist;

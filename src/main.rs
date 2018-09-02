@@ -27,20 +27,22 @@ fn init_logs() {
 }
 
 fn run_reports() {
-    use jira_reporter::checkers::{ca::cachecker, fs2::fs2checker, analyze::analyze};
+    use jira_reporter::checkers::{ca::cachecker, fs2::fs2checker, sys::syschecker,
+        analyze::analyze};
 
     let mut core = Core::new().unwrap();
     let login = Rc::new(Login::new().to_basic());
     let mut fetcher = Fetcher::new(login);
 
-    const FS2EE_SEARCH : &'static str = "project=FPB AND issuetype in (\"\
+    let sys_search = "issuetype = \"Customer Feature\" AND System in (5G, CloudRAN)";
+    analyze(&mut core, &mut fetcher, sys_search, "sys-items.json", syschecker::analyze_results);
+
+    let fs2_search = "project=FPB AND issuetype in (\"\
         Effort Estimation\", \"Entity Technical Analysis\") \
         AND \"Competence Area\" = \"MANO MZ\"";
-    analyze(&mut core, &mut fetcher, FS2EE_SEARCH, "fs2-items.json", 
-            fs2checker::analyze_results);
+    analyze(&mut core, &mut fetcher, fs2_search, "fs2-items.json", fs2checker::analyze_results);
 
-    const CA_SEARCH : &'static str = "project=FPB AND issuetype = \"\
+    let ca_search = "project=FPB AND issuetype = \"\
         Competence Area\" AND \"Competence Area\" = \"MANO MZ\"";
-    analyze(&mut core, &mut fetcher, CA_SEARCH, "ca-items.json", 
-            cachecker::analyze_result);
+    analyze(&mut core, &mut fetcher, ca_search, "ca-items.json", cachecker::analyze_result);
 }

@@ -4,7 +4,7 @@ extern crate serde;
 extern crate serde_json;
 
 use super::caissue::CAIssue;
-use super::caissue::NA_STRING;
+use super::super::utils::NA_STRING;
 use super::super::datatypes::StoredData;
 
 use std::fmt::{Display, Formatter};
