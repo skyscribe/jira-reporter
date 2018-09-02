@@ -46,7 +46,7 @@ pub fn analyze_timeline<F>(buf_writer:&mut BufWriter<File>, items: &Vec<CAItem>,
     for (fid, sub_items) in &items.into_iter()
             .filter(|it| it.start_fb < 3000 && it.end_fb < 3000)
             .filter(|it| issue_filter(it))
-            .group_by(|item| item.feature_id.clone()) {
+            .group_by(|item| get_system_split(&item.sub_id).clone()) {
         let times:Vec<(u32, u32)> = sub_items.map(|it| (it.start_fb, it.end_fb)).collect();
         let timeline = calculate_timeline(&times);
 
@@ -90,4 +90,28 @@ fn calculate_timeline(times: &Vec<(u32, u32)>) -> TimeLineInfo {
         _ => panic!("unexpected!"),
     };
     TimeLineInfo::new(start_first, start_last, end_first, end_last)
+}
+
+fn get_system_split<'a>(sub_id: &'a str) -> &'a str {
+    let last = sub_id.rfind("-").unwrap_or(sub_id.len());
+    let prev = sub_id[0..last].rfind("-").unwrap_or(last);
+    if prev == last {
+        sub_id
+    } else {
+        &sub_id[0..last]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_extract_system_level_split() {
+        assert_eq!(get_system_split("Feature-A-b"), "Feature-A");
+        assert_eq!(get_system_split("Feature-A-b1"), "Feature-A");
+        assert_eq!(get_system_split("Feature-A"), "Feature-A");
+        assert_eq!(get_system_split("Feature"), "Feature");
+        assert_eq!(get_system_split("Feature-A-b1/b2/b3"), "Feature-A");
+    }
 }
