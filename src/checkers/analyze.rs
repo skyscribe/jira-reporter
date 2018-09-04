@@ -20,7 +20,7 @@ use super::datatypes::{ParsedData, StoredData};
 const SEARCH_URI : &'static str = "https://jiradc.int.net.nokia.com/rest/api/2/search";
 //skeleton function for fetch data and do analysis
 pub fn analyze<T, R, F>(core: &mut Core, fetcher: &mut Fetcher, search:&'static str, 
-            cache_fname:&str, analyzer: F)
+            cache_fname:&str, analyzer: F) -> Vec<T>
         where T:DeserializeOwned+Serialize+StoredData<Parsed=R>+Ord, 
               R:DeserializeOwned+ParsedData, F: Fn(&Vec<T>) -> () {
     let mut result = QueryResult::<R>::default(100);
@@ -39,4 +39,5 @@ pub fn analyze<T, R, F>(core: &mut Core, fetcher: &mut Fetcher, search:&'static 
             Ok(write_to(File::create(cache_fname).unwrap(), items).1)
         }).unwrap();
     analyzer(&items);
+    items
 }

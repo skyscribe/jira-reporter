@@ -1,5 +1,6 @@
 extern crate itertools;
 
+use checkers::ca::timeline::get_system_split;
 use std::io::{BufWriter};
 use std::io::Write;
 use std::fmt::format;
@@ -7,11 +8,15 @@ use std::fs::File;
 
 use super::caitem::{Activity, CAItem};
 use super::timeline::analyze_timeline;
+use super::super::fs2::fs2item::Fs2Item;
+use super::super::sys::sysitem::SysItem;
 use checkers::utils::get_leftmost;
+
+use self::itertools::Itertools;
 
 pub const BANNER: &'static str = "================================================================================================\n";
 
-pub fn analyze_result(items: &Vec<CAItem>) {
+pub fn analyze_result(items: &Vec<CAItem>, sys_items: &Vec<SysItem>, _fs2_items: &Vec<Fs2Item>) {
     //dumping
     let mut buf_writer = BufWriter::new(File::create("ca-details-report.txt").unwrap());
     dump_all(&mut buf_writer, &items);
@@ -24,7 +29,9 @@ pub fn analyze_result(items: &Vec<CAItem>) {
     analyze_timeline(&mut buf_writer, &items, "EFS-EI", &mut efs_ei);
     analyze_timeline(&mut buf_writer, &items, "EFS-SW", &mut efs_sw);
     info!("All items' lead time analyzed and dump to report file!");
-    
+
+    let mut buf_writer = BufWriter::new(File::create("ca-plan-report.txt").unwrap());    
+    analyze_plan(&mut buf_writer, items, sys_items);
     info!("Analysis of CA issues finished!");
 }
 
@@ -50,4 +57,68 @@ fn dump_all(buf_writer: &mut BufWriter<File>, items: &Vec<CAItem>){
     buf_writer.write(format(format_args!("Total efforts:{}, unestimated: {}/{}[{:.1}%]", 
             total_efforts, unestimated, total, (unestimated as f32)/(total as f32)*100.0
         )).as_bytes()).unwrap();
+}
+
+pub fn analyze_plan(buf_writer: &mut BufWriter<File>, items: &Vec<CAItem>, sys_items: &Vec<SysItem>) {
+    //check if everything is planned by entity level!
+    let mut om_features:Vec<&str> = sys_items.into_iter()
+        .filter(|it| it.is_oam_feature())
+        .map(|it| it.get_fid())
+        .collect();
+    om_features.sort();
+    
+    let line = format(format_args!("Total {} OM system level features candidate\n", om_features.len()));
+    buf_writer.write(line.as_bytes()).unwrap();
+    buf_writer.write(BANNER.as_bytes()).unwrap();
+
+    //check planning status
+    let mut planned = 0;
+    let mut unplanned = 0;
+    for (fid, mut sub_items) in &items
+        .into_iter()
+        .filter(|it| om_features.binary_search_by(|fid| cmp_with_prefix_as_equal(fid, it.sub_id.as_str())).is_ok() )
+        .group_by(|item| get_system_split(&item.sub_id).clone()) {
+            //check if ET planned
+            let test_status = if sub_items.any(|it| it.activity == Activity::ET) {
+                planned += 1;
+                "planned"
+            } else {
+                unplanned += 1;
+                "not planned!"
+            };
+
+        let line = format(format_args!("Fid = {}, ET status ={}\n", fid, test_status));
+        buf_writer.write(line.as_bytes()).unwrap();
+    }
+
+    let line = format(format_args!("ET unplanned = {}, planned ={}\n", planned, unplanned));
+    buf_writer.write(line.as_bytes()).unwrap();
+    buf_writer.write(BANNER.as_bytes()).unwrap();
+}
+
+use std::cmp::Ordering;
+fn cmp_with_prefix_as_equal(prefix: &str, right: &str) -> Ordering {
+    if right.contains(prefix) {
+        Ordering::Equal
+    } else {
+        prefix.cmp(right)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cmp::Ordering;
+    #[test]
+    fn should_compare_with_same_prefix_as_equal() {
+        assert_eq!(cmp_with_prefix_as_equal("AAA", "AAA-b"), Ordering::Equal);   
+        assert_eq!(cmp_with_prefix_as_equal("AAA", "AAA-B-c"), Ordering::Equal);   
+        assert_eq!(cmp_with_prefix_as_equal("AAA", "AAA"), Ordering::Equal);   
+    }
+
+    #[test]
+    fn should_compare_with_different_prefix_by_strcmp() {
+        assert_eq!(cmp_with_prefix_as_equal("AAA", "BBB-b"), Ordering::Less);   
+        assert_eq!(cmp_with_prefix_as_equal("BBB", "AAA-b"), Ordering::Greater);   
+    }
 }

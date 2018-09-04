@@ -24,6 +24,17 @@ impl SysItem {
             key: raw.key.clone(),
         }
     }
+
+    pub fn get_fid<'a>(&'a self) -> &'a str {
+        match self.summary.find(' ') {
+            Some(x) => &self.summary[0..x],
+            _ => &(self.summary),
+        }
+    }
+
+    pub fn is_oam_feature(&self) -> bool {
+        self.area.contains("OAM") || self.area.contains("Operability")
+    }
 }
 
 impl Ord for SysItem {
@@ -52,5 +63,37 @@ impl StoredData for SysItem {
 
     fn parse_from(issue: &Self::Parsed) -> Self {
         Self::from(issue)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    extern crate serde_json;
+    extern crate serde;
+    use super::*;
+    use checkers::sys::sysissue::tests::*;
+
+    #[test]
+    fn should_parse_fid_from_summary_line() {
+        let item = get_test_item();
+        assert_eq!(item.get_fid(), "Sample");
+    }
+
+    fn get_test_item() -> SysItem {
+        let json = get_test_json();
+        let issue = serde_json::from_str::<SysIssue>(&json);
+        assert!(issue.is_ok(), "{:?}", issue);
+        SysItem::from(&issue.unwrap())
+    }
+
+    #[test]
+    fn should_filter_oam_area_by_first_world_with_given_kws() {
+        let mut item = get_test_item();
+        item.area = "OAM - XXX".to_string();
+        assert!(item.is_oam_feature(), "{:?}", item);
+
+        let mut item1 = item.clone();
+        item1.area = "Operability xxx".to_string();
+        assert!(item1.is_oam_feature(), "{:?}", item);
     }
 }

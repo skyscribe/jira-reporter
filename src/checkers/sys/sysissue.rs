@@ -62,7 +62,7 @@ impl ParsedData for SysIssue {
 
 /// tests
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     #[test]
@@ -72,7 +72,7 @@ mod tests {
         assert!(issue.is_ok(), "{:?}", issue);
     }
 
-    fn get_test_json() -> &'static str {
+    pub fn get_test_json() -> &'static str {
         r#"{
             "expand":"operations,versionedRepresentations,editmeta,changelog,renderedFields",
             "id":"4280470",

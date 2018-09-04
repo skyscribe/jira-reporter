@@ -92,7 +92,7 @@ fn calculate_timeline(times: &Vec<(u32, u32)>) -> TimeLineInfo {
     TimeLineInfo::new(start_first, start_last, end_first, end_last)
 }
 
-fn get_system_split<'a>(sub_id: &'a str) -> &'a str {
+pub (crate) fn get_system_split<'a>(sub_id: &'a str) -> &'a str {
     let last = sub_id.rfind("-").unwrap_or(sub_id.len());
     let prev = sub_id[0..last].rfind("-").unwrap_or(last);
     if prev == last {

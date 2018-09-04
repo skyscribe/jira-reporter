@@ -1,11 +1,12 @@
 use super::fs2item::Fs2Item;
+use super::super::sys::sysitem::SysItem;
 use checkers::utils::get_leftmost;
 
 use std::io::{BufWriter, Write};
 use std::fmt::format;
 use std::fs::File;
 
-pub fn analyze_results(result_list: &Vec<Fs2Item>) {
+pub fn analyze_results(result_list: &Vec<Fs2Item>, _sys_items:&Vec<SysItem>) {
     //dumping
     let total = result_list.len();
     let mut buf_writer = BufWriter::new(File::create("fs-analysis.txt").unwrap());

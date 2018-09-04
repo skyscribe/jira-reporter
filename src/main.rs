@@ -15,7 +15,7 @@ fn main() {
 }
 
 fn init_logs() {
-    use flexi_logger::{Duplicate, opt_format};
+    use flexi_logger::{opt_format};
     flexi_logger::Logger::with_env_or_str("info")
         .format(opt_format)
         .log_to_file()
@@ -35,14 +35,17 @@ fn run_reports() {
     let mut fetcher = Fetcher::new(login);
 
     let sys_search = "issuetype = \"Customer Feature\" AND System in (5G, CloudRAN)";
-    analyze(&mut core, &mut fetcher, sys_search, "sys-items.json", syschecker::analyze_results);
+    let sys_items = analyze(&mut core, &mut fetcher, sys_search, "sys-items.json", 
+            syschecker::analyze_results);
 
     let fs2_search = "project=FPB AND issuetype in (\"\
         Effort Estimation\", \"Entity Technical Analysis\") \
         AND \"Competence Area\" = \"MANO MZ\"";
-    analyze(&mut core, &mut fetcher, fs2_search, "fs2-items.json", fs2checker::analyze_results);
+    let fs2_items = analyze(&mut core, &mut fetcher, fs2_search, "fs2-items.json", 
+            |x| fs2checker::analyze_results(x, &sys_items));
 
     let ca_search = "project=FPB AND issuetype = \"\
         Competence Area\" AND \"Competence Area\" = \"MANO MZ\"";
-    analyze(&mut core, &mut fetcher, ca_search, "ca-items.json", cachecker::analyze_result);
+    analyze(&mut core, &mut fetcher, ca_search, "ca-items.json", 
+           |x| cachecker::analyze_result(x, &sys_items, &fs2_items));
 }
