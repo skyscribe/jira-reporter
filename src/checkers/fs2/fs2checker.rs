@@ -18,7 +18,7 @@ pub fn analyze_results(result_list: &Vec<Fs2Item>) {
     let summary_line = format(format_args!("@@@ Total MZ FS2EE entries: {}, unresolved: {}\n",
             total, unsolved.len()));
     let _x = buf_writer.write(summary_line.as_bytes());
-    info!("{}", summary_line);
+    info!("Got {} items for this analysis", total);
 
     buf_writer.write(banner.as_bytes()).unwrap();
     unsolved.iter().for_each(|it| {
@@ -37,5 +37,5 @@ pub fn analyze_results(result_list: &Vec<Fs2Item>) {
     let line = format(format_args!("@@@ Solved efforts are: {} with {} features\n", 
         solved_eff, total - unsolved.len()));
     let _x = buf_writer.write(line.as_bytes()).unwrap();
-    info!("Analyzed done for this query!");
+    info!("Analyzed done for this analysis!\n");
 }

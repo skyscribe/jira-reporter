@@ -20,7 +20,7 @@ fn init_logs() {
         .format(opt_format)
         .log_to_file()
         .print_message()
-        .duplicate_to_stderr(Duplicate::Info)
+        //.duplicate_to_stderr(Duplicate::Info)
         .directory("logs")
         .start()
         .unwrap_or_else(|_e| panic!("Start log failed!"));

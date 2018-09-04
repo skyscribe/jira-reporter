@@ -31,7 +31,7 @@ pub fn analyze_result(items: &Vec<CAItem>) {
 fn dump_all(buf_writer: &mut BufWriter<File>, items: &Vec<CAItem>){
     let total = items.len();
     let summary = format(format_args!("@@ CA analysis: {} issues in total\n", total));
-    info!("{}", summary);
+    info!("Got {} issues for this analysis", total);
     buf_writer.write(summary.as_bytes()).unwrap();
     
     buf_writer.write(BANNER.as_bytes()).unwrap();

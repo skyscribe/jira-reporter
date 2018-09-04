@@ -11,13 +11,13 @@ pub fn analyze_results(items: &Vec<SysItem>) {
     let mut buf_writer = BufWriter::new(File::create("sys-feature-details.txt").unwrap());
     dump_all(&mut buf_writer, &items);
 
-    info!("Analyzed done for this query!");
+    info!("Analyzed done for this query!\n");
 }
 
 fn dump_all(buf_writer: &mut BufWriter<File>, items: &Vec<SysItem>){
     let total = items.len();
     let summary = format(format_args!("@@ Feature analysis: {} issues in total\n", total));
-    info!("{}", summary);
+    info!("Got {} system level features", total);
     buf_writer.write(summary.as_bytes()).unwrap();
     buf_writer.write(BANNER.as_bytes()).unwrap();
 

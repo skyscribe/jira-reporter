@@ -4,3 +4,4 @@
 logs/*
 *.txt
 *items.json
+Cargo.lock
