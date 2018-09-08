@@ -19,7 +19,7 @@ pub const BANNER: &'static str = "==============================================
 pub fn analyze_result(items: &Vec<CAItem>, sys_items: &Vec<SysItem>, _fs2_items: &Vec<Fs2Item>) {
     //dumping
     let mut buf_writer = BufWriter::new(File::create("ca-details-report.txt").unwrap());
-    dump_all(&mut buf_writer, &items);
+    dump_all(&mut buf_writer, &items, sys_items);
     info!("All items' details dumped to report file!");
 
     //calcualte lead time by features
@@ -35,25 +35,32 @@ pub fn analyze_result(items: &Vec<CAItem>, sys_items: &Vec<SysItem>, _fs2_items:
     info!("Analysis of CA issues finished!");
 }
 
-fn dump_all(buf_writer: &mut BufWriter<File>, items: &Vec<CAItem>){
+fn dump_all(buf_writer: &mut BufWriter<File>, items: &Vec<CAItem>, sys_items: &Vec<SysItem>){
     let total = items.len();
     let summary = format(format_args!("@@ CA analysis: {} issues in total\n", total));
     info!("Got {} issues for this analysis", total);
     buf_writer.write(summary.as_bytes()).unwrap();
+
+    use std::collections::HashMap;
+    let mut sys_map = HashMap::with_capacity(sys_items.len());
+    for it in sys_items {
+        let _x = sys_map.insert(it.get_fid().to_string(), it);
+    }
     
     buf_writer.write(BANNER.as_bytes()).unwrap();
     items.iter().for_each(|it| {
-        let line = format(format_args!("{:9}|{:15}|{:4}|{:10}|{:3}|{:8}|{:4}|{:4}|{:4}|{:60}\n",
-            it.feature_id, get_leftmost(&it.sub_id, 15), it.target, it.key, it.activity, 
-            get_leftmost(&it.team, 8), it.start_fb, it.end_fb, it.efforts, 
-            get_leftmost(&it.description, 40)    
+        let release = sys_map.get(&it.feature_id).map(|sys_it| sys_it.release.as_ref()).unwrap_or("");
+        let line = format(format_args!("{:9}|{:15}|{:4}|{:12}|{:10}|{:3}|{:8}|{:4}|{:4}|{:4}|{:60}\n",
+            it.feature_id, get_leftmost(&it.sub_id, 15), it.target, get_leftmost(release, 12),
+            it.key, it.activity, get_leftmost(&it.team, 8), it.start_fb, 
+            it.end_fb, it.efforts, get_leftmost(&it.description, 60)
         ));
         buf_writer.write(line.as_bytes()).unwrap();
     });
     buf_writer.write(BANNER.as_bytes()).unwrap();
 
     let total_efforts = items.iter().map(|it| if it.efforts > 0 {it.efforts} else {0}).sum::<i32>();
-    let unestimated = items.iter().filter(|it| it.efforts > 0).count();
+    let unestimated = items.iter().filter(|it| it.efforts == -1).count();
     buf_writer.write(format(format_args!("Total efforts:{}, unestimated: {}/{}[{:.1}%]", 
             total_efforts, unestimated, total, (unestimated as f32)/(total as f32)*100.0
         )).as_bytes()).unwrap();
