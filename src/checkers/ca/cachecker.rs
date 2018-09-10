@@ -8,6 +8,7 @@ use std::fs::File;
 
 use super::caitem::{Activity, CAItem};
 use super::timeline::analyze_timeline;
+use super::pipeline::PipelineInfo;
 use super::super::fs2::fs2item::Fs2Item;
 use super::super::sys::sysitem::SysItem;
 use checkers::utils::get_leftmost;
@@ -32,6 +33,11 @@ pub fn analyze_result(items: &Vec<CAItem>, sys_items: &Vec<SysItem>, _fs2_items:
 
     let mut buf_writer = BufWriter::new(File::create("ca-plan-report.txt").unwrap());    
     analyze_plan(&mut buf_writer, items, sys_items);
+    info!("Plan status analyzed!");
+
+    let mut buf_writer = BufWriter::new(File::create("ca-pipeline.txt").unwrap());    
+    generate_pipeline(&mut buf_writer, items);
+
     info!("Analysis of CA issues finished!");
 }
 
@@ -110,6 +116,16 @@ fn cmp_with_prefix_as_equal(prefix: &str, right: &str) -> Ordering {
     } else {
         prefix.cmp(right)
     }
+}
+
+pub fn generate_pipeline(buf_writer: &mut BufWriter<File>, items: &Vec<CAItem>) {
+    items.into_iter()
+        .map(|item| PipelineInfo::from_item(item))
+        .for_each(|it| {
+            //TODO: calculate first and max span?
+            let line = it.generate_schedule_row(1801, 20) + "\n";
+            buf_writer.write(line.as_bytes()).unwrap();
+        });
 }
 
 #[cfg(test)]
