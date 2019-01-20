@@ -34,7 +34,8 @@ fn run_reports() {
     let login = Rc::new(Login::new().to_basic());
     let mut fetcher = Fetcher::new(login);
 
-    let sys_search = "issuetype = \"Customer Feature\" AND System in (5G, CloudRAN)";
+    let sys_search = r#"issuetype = "Customer Feature" AND (cf[38700] in (gNB, "Cloud BTS", "AirScale Cloud BTS") OR System in (5G, CloudRAN))"#;
+    //let sys_search = "issuetype = \"Customer Feature\" AND System in (5G, CloudRAN)";
     let sys_items = analyze(&mut core, &mut fetcher, sys_search, "sys-items.json", 
             syschecker::analyze_results);
 
