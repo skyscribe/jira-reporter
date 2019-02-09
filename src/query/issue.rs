@@ -1,7 +1,4 @@
-extern crate serde;
-extern crate serde_json;
-
-use self::serde::Deserialize;
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]

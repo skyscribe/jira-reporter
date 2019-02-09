@@ -61,7 +61,7 @@ impl CAItem {
             team: issue.get_team().trim_right_matches(special).to_string(),
             start_fb: convert_fb(issue.get_start()),
             end_fb: convert_fb(issue.get_end()),
-            activity: activity,
+            activity,
             sub_id: subid.to_string(),
             description: desc.to_string(),
             target: issue.get_target().to_string(),
@@ -97,25 +97,23 @@ impl CAItem {
 
         if value == NA_STRING {
             Activity::NA
-        } else {
-            if match_kwds(efs_kwds, value) {
-                Activity::EFS
-            } else if match_kwds(et_kwds, value) { 
-                Activity::ET
-            } else {
-                Activity::SW
-            }
-        }
+        } else if match_kwds(efs_kwds, value) {
+    Activity::EFS
+} else if match_kwds(et_kwds, value) { 
+    Activity::ET
+} else {
+    Activity::SW
+}
     }
 }
 
 fn convert_fb(value: &str) -> u32 {
     if value == NA_STRING {
-        DEFAULT_FB.clone()
+        DEFAULT_FB
     } else {
         match u32::from_str_radix(value, 10) {
             Ok(x) => x,
-            Err(_) => DEFAULT_FB.clone(),
+            Err(_) => DEFAULT_FB,
         }
     }
 }

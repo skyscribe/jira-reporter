@@ -1,11 +1,11 @@
-pub mod query;
+pub mod batch;
 pub mod result;
 pub mod issue;
 
 // Tests for this module
 #[cfg(test)]
 mod test {
-    use super::query::*;
+    use super::batch::Query;
 
     fn create_query() -> (Query, String) {
         (

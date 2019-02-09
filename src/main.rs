@@ -1,11 +1,5 @@
-extern crate flexi_logger;
-extern crate jira_reporter;
-extern crate hyper;
-extern crate tokio_core;
-extern crate futures;
-
 use tokio_core::reactor::Core;
-use jira_reporter::fetch::fetch::Fetcher;
+use jira_reporter::fetch::fetcher::Fetcher;
 use jira_reporter::fetch::login::Login;
 use std::rc::Rc;
 

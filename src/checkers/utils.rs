@@ -3,11 +3,11 @@ extern crate itertools;
 
 use self::serde_json::Value;
 use self::itertools::Itertools;
-pub const NA_STRING : &'static str = "NA";
+pub const NA_STRING : &str = "NA";
 
 //Get a slice of the leftmost given characters
 pub fn get_leftmost(raw: &str, total: usize) -> &str {
-    let max = raw.find("\n").map_or(raw.len(), |x| x);
+    let max = raw.find('\n').map_or(raw.len(), |x| x);
     if max > total {
         let mut end = total;
         //find next char boundary
@@ -48,7 +48,7 @@ pub(crate) fn get_wrapped_object_attr<'a>(value:&'a Value, attr: &str) -> &'a st
     }
 }
 
-pub(crate) fn get_wrapped_or_na<'a>(value: &'a Value) -> &'a str {
+pub(crate) fn get_wrapped_or_na(value: &Value) -> &str {
     get_wrapped_string(value, &NA_STRING)
 }
 

@@ -1,21 +1,17 @@
 
-extern crate hyper;
-extern crate tokio_core;
 use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
 use std::clone::Clone;
 use std::sync::mpsc::channel;
-use self::tokio_core::reactor::Core;
-extern crate futures;
+use tokio_core::reactor::Core;
 
-extern crate serde;
-use self::serde::de::DeserializeOwned;
-use self::hyper::StatusCode;
+use serde::de::DeserializeOwned;
+use hyper::StatusCode;
 
-use fetch::fetch::{Fetcher, RequestInfo};
-use query::query::Query;
-use query::result::{parse_query_result, QueryResult};
-use self::futures::future::{Future, join_all};
+use crate::fetch::fetcher::{Fetcher, RequestInfo};
+use crate::query::batch::Query;
+use crate::query::result::{parse_query_result, QueryResult};
+use futures::future::{Future, join_all};
 
 pub struct Searcher<'a> {
     core:&'a mut Core,
@@ -29,9 +25,9 @@ impl <'a> Searcher<'a> {
     pub fn new(core: &'a mut Core, fetcher: &'a mut Fetcher, uri: &'a str, 
             pending: Vec<Query>) -> Searcher<'a> {
         Searcher{
-            core: core,
-            fetcher: fetcher,
-            uri: uri,
+            core,
+            fetcher,
+            uri,
             pending_jobs: pending,
             finished: Vec::new(),
         }
@@ -45,7 +41,7 @@ impl <'a> Searcher<'a> {
         //first search
         self.reset_pending(vec![search.clone()])
             .perform_parallel(result);
-        if result.issues.len() == 0 {
+        if result.issues.is_empty() {
             error!("First search failed?");
             panic!("Unexpected ending!");
         }
@@ -63,7 +59,7 @@ impl <'a> Searcher<'a> {
 
     fn perform_parallel<T: DeserializeOwned>(&mut self, result: &mut QueryResult<T>){
         let (tx, rx) = channel();
-        while self.pending_jobs.len() > 0 {
+        while self.pending_jobs.is_empty() {
             self.finished.clear();
             self.drain_all_jobs(&tx);
             self.collect_all_responses(result, &rx);
@@ -104,7 +100,7 @@ impl <'a> Searcher<'a> {
         receiver: &Receiver<Result<Box<QueryResult<T>>, usize>>) {
     
         let total = self.pending_jobs.len();
-        for  x in 1..(total+1) {
+        for  x in 1..=total {
             if let Ok(process_result) = receiver.recv() {
                 match process_result {
                     Ok(qry) => {
@@ -130,7 +126,7 @@ impl <'a> Searcher<'a> {
     }
 
     fn clean_finished_from_pending(&mut self) {
-        let ref mut finished = self.finished;
+        let finished = &mut self.finished;
         self.pending_jobs.retain(|ref qry| {
             finished.sort_unstable();
             finished.binary_search(&qry.startAt).is_err()

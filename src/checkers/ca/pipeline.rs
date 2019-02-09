@@ -2,7 +2,7 @@
 use std::fmt::format;
 //use std::fs::File;
 
-use checkers::utils::get_leftmost;
+use crate::checkers::utils::get_leftmost;
 use super::caitem::{Activity, CAItem};
 
 pub struct PipelineInfo<'a> {

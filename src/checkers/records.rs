@@ -16,7 +16,7 @@ impl <T> Records<T> {
     pub fn new(records: Vec<T>) -> Records<T> {
         Records {
             timestamp: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs(),
-            records: records,
+            records,
         }
     }
 }

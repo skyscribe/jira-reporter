@@ -1,19 +1,16 @@
-extern crate serde;
-extern crate serde_json;
+use serde_json::Value;
+use crate::query::issue::Issue;
+use crate::checkers::datatypes::ParsedData;
+use crate::checkers::utils::*;
 
-use self::serde_json::Value;
-use query::issue::Issue;
-use super::super::datatypes::ParsedData;
-use super::super::utils::*;
-
-const CA_FIELDS_SUMMARY     : &'static str = "summary";
-const CA_FIELDS_FEATUREID   : &'static str = "customfield_37381";
-const CA_FIELDS_TEAM        : &'static str = "customfield_38727";
-const CA_FIELDS_STARTFB     : &'static str = "customfield_38694";
-const CA_FIELDS_ENDFB       : &'static str = "customfield_38693";
-const CA_FIELDS_TYPE        : &'static str = "customfield_38750";
-const CA_FIELDS_ORIG_EFF    : &'static str = "timeoriginalestimate";
-const CA_FIELDS_TARGET      : &'static str = "customfield_38723";
+const CA_FIELDS_SUMMARY     : &str = "summary";
+const CA_FIELDS_FEATUREID   : &str = "customfield_37381";
+const CA_FIELDS_TEAM        : &str = "customfield_38727";
+const CA_FIELDS_STARTFB     : &str = "customfield_38694";
+const CA_FIELDS_ENDFB       : &str = "customfield_38693";
+const CA_FIELDS_TYPE        : &str = "customfield_38750";
+const CA_FIELDS_ORIG_EFF    : &str = "timeoriginalestimate";
+const CA_FIELDS_TARGET      : &str = "customfield_38723";
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]

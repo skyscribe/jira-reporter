@@ -16,6 +16,12 @@ pub struct Login {
     password: String,
 }
 
+impl Default for Login {
+    fn default() -> Self {
+        Login::new()
+    }
+}
+
 impl Login {
     pub fn new() -> Login {
         match Login::load_credentials() {
@@ -52,8 +58,8 @@ impl Login {
         info!("Prepared login details now with user=<{}>, pwd=<{}>", self.username, String::from_utf8(
                 vec![42; self.password.len()]).unwrap());
         Basic {
-            username: self.username.clone().into(),
-            password: self.password.clone().into(),
+            username: self.username.clone(),
+            password: Some(self.password.clone()),
         }
     }
 

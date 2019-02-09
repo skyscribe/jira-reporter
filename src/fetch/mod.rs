@@ -1,9 +1,9 @@
-pub mod fetch;
+pub mod fetcher;
 pub mod login;
 
 #[cfg(test)]
 mod test {
-    use super::login::*;
+    use super::login::{new_login, Login};
 
     #[test]
     fn shall_load_cred_from_contents() {

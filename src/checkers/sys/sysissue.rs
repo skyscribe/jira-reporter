@@ -1,17 +1,13 @@
-extern crate serde;
-extern crate serde_json;
-extern crate itertools;
+use crate::query::issue::Issue;
+use crate::checkers::datatypes::ParsedData;
+use crate::checkers::utils::*;
+use serde_json::Value;
 
-use query::issue::Issue;
-use super::super::datatypes::ParsedData;
-use super::super::utils::*;
-use self::serde_json::Value;
-
-const SYS_FIELDS_SUMMARY   : &'static str = "summary";
-const SYS_FIELDS_AREA      : &'static str = "customfield_38711";
-const SYS_FIELDS_STATUS    : &'static str = "status";
-const SYS_FIELDS_TITLE    : &'static str = "customfield_38703";
-const SYS_FIELDS_RELEASE  : &'static str = "customfield_38724";
+const SYS_FIELDS_SUMMARY   : &str = "summary";
+const SYS_FIELDS_AREA      : &str = "customfield_38711";
+const SYS_FIELDS_STATUS    : &str = "status";
+const SYS_FIELDS_TITLE    : &str = "customfield_38703";
+const SYS_FIELDS_RELEASE  : &str = "customfield_38724";
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SysFields {

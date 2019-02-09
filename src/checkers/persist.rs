@@ -1,9 +1,6 @@
-extern crate serde;
-extern crate serde_json;
-
-use self::serde::de::DeserializeOwned;
-use self::serde::Serialize;
-use checkers::records::*;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+use crate::checkers::records::*;
 use std::io::{Read, Write};
 use std::time::SystemTime;
 const REFRESH_THRESHOLD: u64 = 7200;
@@ -54,7 +51,7 @@ pub (crate) fn write_to<T, W>(writer: W, items: Vec<T>) ->
 #[cfg(test)]
 mod tests {
     use super::*;
-    use checkers::ca::caitem::{CAItem, Activity};
+    use crate::checkers::ca::caitem::{CAItem, Activity};
     use std::time::SystemTime;
     type ParseResult = Result<Records<CAItem>, ParseError>;
 

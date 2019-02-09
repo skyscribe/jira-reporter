@@ -1,18 +1,14 @@
-extern crate serde;
-extern crate serde_json;
-extern crate itertools;
-
-use self::serde_json::Value;
-use query::issue::Issue;
+use serde_json::Value;
+use crate::query::issue::Issue;
 use super::super::datatypes::ParsedData;
 use super::super::utils::*;
 
-const FS2EE_FIELDS_SUMMARY  : &'static str = "summary";
-const FS2EE_FIELDS_DESCRIPT : &'static str = "description";
-const FS2EE_FIELDS_STATUS   : &'static str = "status";
-const FS2EE_FIELDS_TITLE    : &'static str = "customfield_38703";
-const FS2EE_FIELDS_EE       : &'static str = "customfield_38692";
-const FS2EE_FIELDS_RELEASE  : &'static str = "customfield_38724";
+const FS2EE_FIELDS_SUMMARY  : &str = "summary";
+const FS2EE_FIELDS_DESCRIPT : &str = "description";
+const FS2EE_FIELDS_STATUS   : &str = "status";
+const FS2EE_FIELDS_TITLE    : &str = "customfield_38703";
+const FS2EE_FIELDS_EE       : &str = "customfield_38692";
+const FS2EE_FIELDS_RELEASE  : &str = "customfield_38724";
 
 #[derive(Deserialize, Debug, Clone)]
 #[allow(non_snake_case)]

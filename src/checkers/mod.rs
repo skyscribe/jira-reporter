@@ -10,7 +10,7 @@ pub(crate) mod datatypes;
 
 #[cfg(test)]
 mod test {
-    use checkers::utils::*;
+    use crate::checkers::utils::*;
 
     #[test]
     fn should_trim_newlines() {

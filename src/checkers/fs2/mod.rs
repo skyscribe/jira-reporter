@@ -5,7 +5,7 @@ pub(crate) mod fs2item;
 #[cfg(test)]
 mod test {
     use super::fs2issue::Fs2Issue;
-    use query::result::*;
+    use crate::query::result::*;
 
     #[test]
     fn shall_parse_search_result() {

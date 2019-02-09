@@ -25,7 +25,7 @@ impl SysItem {
         }
     }
 
-    pub fn get_fid<'a>(&'a self) -> &'a str {
+    pub fn get_fid(&self) -> &str {
         match self.summary.find(' ') {
             Some(x) => &self.summary[0..x],
             _ => &(self.summary),
@@ -71,7 +71,7 @@ mod tests {
     extern crate serde_json;
     extern crate serde;
     use super::*;
-    use checkers::sys::sysissue::tests::*;
+    use crate::checkers::sys::sysissue::tests::*;
 
     #[test]
     fn should_parse_fid_from_summary_line() {
