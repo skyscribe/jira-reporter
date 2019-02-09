@@ -1,14 +1,14 @@
+extern crate hex;
 extern crate hyper;
 extern crate rpassword;
-extern crate hex;
 
-use std::io::{stdin, stdout, Write};
+use self::hex::{decode, encode};
 use self::hyper::header::Basic;
 use self::rpassword::prompt_password_stdout;
 use std::fs;
-use self::hex::{encode, decode};
+use std::io::{stdin, stdout, Write};
 
-const CRED_FILE : &str = ".cred.bin";
+const CRED_FILE: &str = ".cred.bin";
 
 #[derive(PartialEq, Debug)]
 pub struct Login {
@@ -44,10 +44,10 @@ impl Login {
             if let Ok(name_len @ 5...20) = stdin().read_line(&mut buf1) {
                 let passwd_string = prompt_password_stdout("Please input your password:");
                 if let Ok(passwd_string) = passwd_string {
-                    return Login{
-                        username: buf1[0..name_len-2].to_string(),
+                    return Login {
+                        username: buf1[0..name_len - 2].to_string(),
                         password: passwd_string,
-                    }
+                    };
                 }
             }
         }
@@ -55,8 +55,11 @@ impl Login {
 
     pub fn to_basic(&self) -> Basic {
         //we just show password as a series of stars
-        info!("Prepared login details now with user=<{}>, pwd=<{}>", self.username, String::from_utf8(
-                vec![42; self.password.len()]).unwrap());
+        info!(
+            "Prepared login details now with user=<{}>, pwd=<{}>",
+            self.username,
+            String::from_utf8(vec![42; self.password.len()]).unwrap()
+        );
         Basic {
             username: self.username.clone(),
             password: Some(self.password.clone()),
@@ -85,44 +88,45 @@ impl Login {
         }
 
         let sep: usize = content[0] as usize;
-        let v8_slice_to_string = |vec : &[u8]| String::from_utf8(vec.to_vec()).unwrap();
-        let decode_string = |slice: &[u8] | v8_slice_to_string(&decode(v8_slice_to_string(slice)).unwrap());
-        if sep < (content.len() - 1)/2  {
-            Some(Login{
+        let v8_slice_to_string = |vec: &[u8]| String::from_utf8(vec.to_vec()).unwrap();
+        let decode_string =
+            |slice: &[u8]| v8_slice_to_string(&decode(v8_slice_to_string(slice)).unwrap());
+        if sep < (content.len() - 1) / 2 {
+            Some(Login {
                 username: decode_string(&content[1..sep]),
                 password: decode_string(&content[sep..content.len()]),
             })
         } else {
-            warn!("Invalid credential file = {}, is this first time use?", CRED_FILE);
+            warn!(
+                "Invalid credential file = {}, is this first time use?",
+                CRED_FILE
+            );
             None
         }
     }
 
     pub fn save_credentials(&self) -> Option<String> {
-        let mut contents : Vec<u8> = Vec::new();
+        let mut contents: Vec<u8> = Vec::new();
         self.save_to_temp(&mut contents);
         match fs::write(CRED_FILE, contents) {
             Ok(()) => {
                 info!("New credentials saved for future use!");
                 None
-            },
+            }
             Err(_) => {
                 error!("Writing into file failed!");
                 Some("Write error".to_string())
-            },
+            }
         }
     }
 
     pub fn save_to_temp(&self, contents: &mut Vec<u8>) {
-        contents.push((2 * self.username.len()+1) as u8);
+        contents.push((2 * self.username.len() + 1) as u8);
         contents.extend(encode(&self.username).as_bytes());
         contents.extend(encode(&self.password).as_bytes());
     }
 }
 
 pub fn new_login(username: String, password: String) -> Login {
-    Login{
-        username,
-        password,
-    }
+    Login { username, password }
 }

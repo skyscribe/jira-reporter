@@ -1,5 +1,5 @@
-use super::fs2issue::Fs2Issue;
 use super::super::datatypes::StoredData;
+use super::fs2issue::Fs2Issue;
 use std::cmp::Ord;
 use std::cmp::Ordering;
 
@@ -32,20 +32,21 @@ impl Fs2Item {
 
 impl Ord for Fs2Item {
     fn cmp(&self, other: &Fs2Item) -> Ordering {
-        self.summary.cmp(&other.summary)
+        self.summary
+            .cmp(&other.summary)
             .then(self.title.cmp(&other.title))
             .then(self.efforts.cmp(&other.efforts))
     }
 }
 
 impl PartialOrd for Fs2Item {
-    fn partial_cmp(&self, other:&Fs2Item) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Fs2Item) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl PartialEq for Fs2Item {
-    fn eq(&self, other:&Fs2Item) -> bool {
+    fn eq(&self, other: &Fs2Item) -> bool {
         self.cmp(other) == Ordering::Equal
     }
 }

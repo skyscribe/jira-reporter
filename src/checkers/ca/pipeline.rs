@@ -2,8 +2,8 @@
 use std::fmt::format;
 //use std::fs::File;
 
-use crate::checkers::utils::get_leftmost;
 use super::caitem::{Activity, CAItem};
+use crate::checkers::utils::get_leftmost;
 
 pub struct PipelineInfo<'a> {
     sub_id: &'a String,
@@ -16,7 +16,7 @@ pub struct PipelineInfo<'a> {
 }
 
 impl<'a> PipelineInfo<'a> {
-    pub fn from_item<'c:'a>(item: &'c CAItem) -> PipelineInfo {
+    pub fn from_item<'c: 'a>(item: &'c CAItem) -> PipelineInfo {
         PipelineInfo {
             sub_id: &item.sub_id,
             description: &item.description,
@@ -29,8 +29,8 @@ impl<'a> PipelineInfo<'a> {
     }
 
     //get its own schedule info
-    fn get_sched(&self, first_fb:u32) -> (u32, u32) {
-        let mut offset:i32 = self.start_fb as i32 - first_fb as i32;
+    fn get_sched(&self, first_fb: u32) -> (u32, u32) {
+        let mut offset: i32 = self.start_fb as i32 - first_fb as i32;
         if offset > 20 {
             offset = 20;
         }
@@ -43,7 +43,7 @@ impl<'a> PipelineInfo<'a> {
             }
         } else {
             let mut lead_time = self.end_fb - self.start_fb + 1;
-            if lead_time > 12 { 
+            if lead_time > 12 {
                 lead_time -= 87; //1901 - 1813 = 1
             }
 
@@ -62,13 +62,17 @@ impl<'a> PipelineInfo<'a> {
 
     //format pipeline row by start/end
     pub fn generate_schedule_row(&self, first_fb: u32, max_span: u32) -> String {
-        let mut output = format(format_args!("{:15}|{:30}|{:3}|{:8}|", 
-            get_leftmost(self.sub_id, 15), get_leftmost(self.description, 30),
-            self.activity, get_leftmost(self.team, 8)));
-        
+        let mut output = format(format_args!(
+            "{:15}|{:30}|{:3}|{:8}|",
+            get_leftmost(self.sub_id, 15),
+            get_leftmost(self.description, 30),
+            self.activity,
+            get_leftmost(self.team, 8)
+        ));
+
         let (offset, span) = self.get_sched(first_fb);
         if self.start_fb == 9999 || offset >= max_span {
-            for _i in 0..max_span-1 {
+            for _i in 0..max_span - 1 {
                 output += "    |";
             }
             output += "x   ";
@@ -79,16 +83,20 @@ impl<'a> PipelineInfo<'a> {
         for _i in 0..offset {
             output += "    |";
         }
-        
-        //planed 
-        let middle = if offset + span >= max_span {max_span - offset - 1} else {span};
+
+        //planed
+        let middle = if offset + span >= max_span {
+            max_span - offset - 1
+        } else {
+            span
+        };
         for _i in 0..middle {
             output += "x   |";
         }
 
         //beyond end - 1
-        for _i in offset + middle .. (max_span-1) {
-            output += "    |";            
+        for _i in offset + middle..(max_span - 1) {
+            output += "    |";
         }
 
         if offset + span >= max_span {
@@ -103,9 +111,9 @@ impl<'a> PipelineInfo<'a> {
 #[cfg(test)]
 mod tests {
     extern crate serde_json;
-    use super::{CAItem, PipelineInfo};
     use super::super::caissue::CAIssue;
     use super::super::caitem::tests::get_test_json;
+    use super::{CAItem, PipelineInfo};
 
     #[test]
     fn should_get_schedule_info_without_round() {
@@ -122,7 +130,7 @@ mod tests {
     #[test]
     fn should_get_shecule_info_with_rounded_plan() {
         let mut item = get_test_item();
-        item.end_fb = 1901;//start = 1807
+        item.end_fb = 1901; //start = 1807
 
         let pipeline_info = PipelineInfo::from_item(&item);
         let (start, span) = pipeline_info.get_sched(1807);
@@ -134,7 +142,7 @@ mod tests {
     fn should_get_shecule_info_with_unknown_plan() {
         let mut item = get_test_item();
         item.start_fb = 9999;
-        item.end_fb = 9999;//start = 1807
+        item.end_fb = 9999; //start = 1807
 
         let pipeline_info = PipelineInfo::from_item(&item);
         let (start, span) = pipeline_info.get_sched(1807);
@@ -169,43 +177,43 @@ mod tests {
 
     #[test]
     fn should_generate_pipeline_item_with_long_leading() {
-        check_pipeline_for(1808, 1901, 
+        check_pipeline_for(1808, 1901,
             "Fid-A-a        |description                   |SW |X       |    |    |x   |x   |x   |x   ");
     }
 
     #[test]
     fn should_generate_pipeline_item_with_unplanned() {
-        check_pipeline_for(9999, 9999, 
+        check_pipeline_for(9999, 9999,
             "Fid-A-a        |description                   |SW |X       |    |    |    |    |    |x   ");
     }
 
     #[test]
     fn should_generate_pipeline_item_with_planned_until_last() {
-        check_pipeline_for(1808, 1810, 
+        check_pipeline_for(1808, 1810,
             "Fid-A-a        |description                   |SW |X       |    |    |x   |x   |x   |    ");
     }
 
     #[test]
     fn should_generate_pipeline_item_with_planned_no_ending() {
-        check_pipeline_for(1808, 9999, 
+        check_pipeline_for(1808, 9999,
             "Fid-A-a        |description                   |SW |X       |    |    |x   |x   |x   |x   ");
     }
 
     #[test]
     fn should_generate_pipeline_item_with_start_as_first() {
-        check_pipeline_for(1806, 1808, 
+        check_pipeline_for(1806, 1808,
             "Fid-A-a        |description                   |SW |X       |x   |x   |x   |    |    |    ");
     }
 
     #[test]
     fn should_generate_pipeline_item_with_done_before_first() {
-        check_pipeline_for(1801, 1802, 
+        check_pipeline_for(1801, 1802,
             "Fid-A-a        |description                   |SW |X       |    |    |    |    |    |    ");
     }
 
     #[test]
     fn should_generate_pipeline_item_with_start_before_first() {
-        check_pipeline_for(1801, 1807, 
+        check_pipeline_for(1801, 1807,
             "Fid-A-a        |description                   |SW |X       |x   |x   |    |    |    |    ");
     }
 

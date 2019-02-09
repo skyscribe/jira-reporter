@@ -1,14 +1,14 @@
-const DEFAULT_FB : u32 = 9999;
+const DEFAULT_FB: u32 = 9999;
 
 extern crate serde;
 extern crate serde_json;
 
-use super::caissue::CAIssue;
-use super::super::utils::NA_STRING;
 use super::super::datatypes::StoredData;
+use super::super::utils::NA_STRING;
+use super::caissue::CAIssue;
 
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
 #[derive(Ord, Eq, PartialOrd, PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum Activity {
@@ -27,7 +27,7 @@ impl Display for Activity {
             Activity::NA => "NA",
         };
         if let Some(wid) = f.width() {
-            write!(f, "{:width$}", repr, width=wid)
+            write!(f, "{:width$}", repr, width = wid)
         } else {
             write!(f, "{}", repr)
         }
@@ -38,8 +38,8 @@ impl Display for Activity {
 pub struct CAItem {
     pub summary: String,
     pub key: String,
-    pub sub_id : String, 
-    pub description: String, 
+    pub sub_id: String,
+    pub description: String,
     pub feature_id: String,
     pub team: String,
     pub start_fb: u32,
@@ -51,7 +51,7 @@ pub struct CAItem {
 
 impl CAItem {
     pub fn from(issue: &CAIssue) -> CAItem {
-        let special : &[_] = &['\t', '\n', '\r', ' '];
+        let special: &[_] = &['\t', '\n', '\r', ' '];
         let (subid, desc) = CAItem::get_summary(&issue.fields.summary);
         let activity = CAItem::get_type(issue.get_type());
         CAItem {
@@ -72,14 +72,12 @@ impl CAItem {
     pub fn get_summary(summary: &str) -> (&str, &str) {
         //split by first " " only after trimming left spaces
         let summary = trim_leading_puncs(summary);
-        match summary.find(|x:char| x==' ' || x == '\t') {
+        match summary.find(|x: char| x == ' ' || x == '\t') {
             Some(x) => {
                 let (first, last) = summary.split_at(x);
                 (trim_as_sub_fid(first), trim_leading_puncs(last))
-            },
-            None => {
-                (trim_as_sub_fid(&summary), "")
-            },
+            }
+            None => (trim_as_sub_fid(&summary), ""),
         }
     }
 
@@ -93,17 +91,17 @@ impl CAItem {
     pub fn get_type(value: &str) -> Activity {
         let efs_kwds = vec!["Entity Specification", "EFS"];
         let et_kwds = vec!["Entity Testing", "ET"];
-        let match_kwds = |kwds:Vec<&str>, x:&str| kwds.iter().any(|k| x.find(k).is_some());
+        let match_kwds = |kwds: Vec<&str>, x: &str| kwds.iter().any(|k| x.find(k).is_some());
 
         if value == NA_STRING {
             Activity::NA
         } else if match_kwds(efs_kwds, value) {
-    Activity::EFS
-} else if match_kwds(et_kwds, value) { 
-    Activity::ET
-} else {
-    Activity::SW
-}
+            Activity::EFS
+        } else if match_kwds(et_kwds, value) {
+            Activity::ET
+        } else {
+            Activity::SW
+        }
     }
 }
 
@@ -127,9 +125,11 @@ fn trim_leading_puncs(current: &str) -> &str {
 //Trim duplicate information from sub-fid str
 fn trim_as_sub_fid(first: &str) -> &str {
     let skips: &[_] = &['-', ':'];
-    get_substr_until_one_of(first, &[
-        "-CP3", "-EFS", "-OM", "-OAM", "-CFAM", "-EI", "-Ei"
-    ]).trim_right_matches(skips)
+    get_substr_until_one_of(
+        first,
+        &["-CP3", "-EFS", "-OM", "-OAM", "-CFAM", "-EI", "-Ei"],
+    )
+    .trim_right_matches(skips)
 }
 
 fn get_substr_until_one_of<'a>(current: &'a str, ignored: &[&str]) -> &'a str {
@@ -150,16 +150,17 @@ fn get_substr_until<'a>(current: &'a str, trailing: &str) -> &'a str {
 use std::cmp::Ordering;
 impl Ord for CAItem {
     fn cmp(&self, other: &CAItem) -> Ordering {
-        self.feature_id.cmp(&other.feature_id)
+        self.feature_id
+            .cmp(&other.feature_id)
             .then(self.sub_id.cmp(&other.sub_id))
-            .then(self.activity.cmp(&other.activity))            
+            .then(self.activity.cmp(&other.activity))
             .then(self.start_fb.cmp(&other.start_fb))
             .then(self.end_fb.cmp(&other.end_fb))
     }
 }
 
 impl PartialOrd for CAItem {
-    fn partial_cmp(&self, other:&CAItem) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &CAItem) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
@@ -194,7 +195,7 @@ pub(crate) mod tests {
         let json = get_test_json("Feature_ID_xxx_yyy", "SW", "Team yyy");
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
-        
+
         let converted = CAItem::from(&issue.unwrap());
         assert_eq!(converted.summary, "Feature_ID_xxx_yyy");
         assert_eq!(converted.feature_id, "Feature_ID");
@@ -204,7 +205,7 @@ pub(crate) mod tests {
         assert_eq!(converted.activity, Activity::SW);
     }
 
-    pub fn get_test_json(summary:&str, activity: &str, team: &str) -> String {
+    pub fn get_test_json(summary: &str, activity: &str, team: &str) -> String {
         let hdr = r#"{
             "expand" : "",
             "id": "",
@@ -212,15 +213,20 @@ pub(crate) mod tests {
             "key": "",    
             "fields": {
                 "summary": ""#;
-        String::from(hdr) + summary + r#"",
+        String::from(hdr)
+            + summary
+            + r#"",
                 "customfield_37381":"Feature_ID",
-                "customfield_38727":""# + team + r#"",
+                "customfield_38727":""#
+            + team
+            + r#"",
                 "customfield_38723":"PT4",
                 "customfield_38694":"1808",
                 "customfield_38693":"1809",
                 "timeoriginalestimate":24000,
                 "customfield_38750":{ "value": ""#
-        + activity + r#""}
+            + activity
+            + r#""}
         }}"#
     }
 
@@ -230,7 +236,7 @@ pub(crate) mod tests {
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
         let converted = CAItem::from(&issue.unwrap());
-        
+
         assert_eq!(converted.sub_id, "Leading");
         assert_eq!(converted.description, "something else");
     }
@@ -242,9 +248,9 @@ pub(crate) mod tests {
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok(), "Parsing result:{:?}", issue);
         let converted = CAItem::from(&issue.unwrap());
-        
+
         assert_eq!(converted.sub_id, "Leading");
-        assert_eq!(converted.description, "something else"); 
+        assert_eq!(converted.description, "something else");
         assert_eq!(converted.team, "Team yyy");
     }
 
@@ -253,7 +259,7 @@ pub(crate) mod tests {
         let json = get_test_json("Leading - something else", "Entity Specification", "X");
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
-        assert_eq!(CAItem::from(&issue.unwrap()).activity, Activity::EFS);   
+        assert_eq!(CAItem::from(&issue.unwrap()).activity, Activity::EFS);
     }
 
     #[test]
@@ -261,7 +267,7 @@ pub(crate) mod tests {
         let json = get_test_json("Leading - something else", "Entity Testing", "X");
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
-        assert_eq!(CAItem::from(&issue.unwrap()).activity, Activity::ET);   
+        assert_eq!(CAItem::from(&issue.unwrap()).activity, Activity::ET);
     }
 
     #[test]
@@ -271,7 +277,7 @@ pub(crate) mod tests {
         let issue = serde_json::from_str::<CAIssue>(&json);
         assert!(issue.is_ok());
         let item = CAItem::from(&issue.unwrap());
-        
+
         let mut item1 = item.clone();
         item1.activity = Activity::SW;
         assert_eq!(item.cmp(&item1), Ordering::Less);
@@ -327,74 +333,106 @@ pub(crate) mod tests {
 
     #[test]
     fn should_normalize_fid_dup_cp3() {
-        parse_and_check_against("Feature-A-a-CP3 something else", 
-            "Feature-A-a", "something else");
+        parse_and_check_against(
+            "Feature-A-a-CP3 something else",
+            "Feature-A-a",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_dup_efs() {
-        parse_and_check_against("Feature-A-a-EFS something else", 
-            "Feature-A-a", "something else");
+        parse_and_check_against(
+            "Feature-A-a-EFS something else",
+            "Feature-A-a",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_dup_om_cp3() {
-        parse_and_check_against("Feature-A-a-OM-CP3 something else", 
-            "Feature-A-a", "something else");
+        parse_and_check_against(
+            "Feature-A-a-OM-CP3 something else",
+            "Feature-A-a",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_dup_oam() {
-        parse_and_check_against("Feature-A-a-OAM something else",
-            "Feature-A-a", "something else");
+        parse_and_check_against(
+            "Feature-A-a-OAM something else",
+            "Feature-A-a",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_dup_om() {
-        parse_and_check_against("Feature-A-a-OM something else",
-            "Feature-A-a", "something else");
+        parse_and_check_against(
+            "Feature-A-a-OM something else",
+            "Feature-A-a",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_dup_cfam() {
-        parse_and_check_against("Feature-A-a-CFAM-xx something else", 
-            "Feature-A-a", "something else");
+        parse_and_check_against(
+            "Feature-A-a-CFAM-xx something else",
+            "Feature-A-a",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_dup_Ei() {
-        parse_and_check_against("Feature-A-a-Ei something else", 
-            "Feature-A-a", "something else");
+        parse_and_check_against(
+            "Feature-A-a-Ei something else",
+            "Feature-A-a",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_dup_EI() {
-        parse_and_check_against("Feature-A-a-EI something else", 
-            "Feature-A-a", "something else");
+        parse_and_check_against(
+            "Feature-A-a-EI something else",
+            "Feature-A-a",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_with_ending_dash() {
-        parse_and_check_against("Feature-A-a2- something else", 
-            "Feature-A-a2", "something else");
+        parse_and_check_against(
+            "Feature-A-a2- something else",
+            "Feature-A-a2",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_with_ending_colon() {
-        parse_and_check_against("Feature-A-a2: something else", 
-            "Feature-A-a2", "something else");
+        parse_and_check_against(
+            "Feature-A-a2: something else",
+            "Feature-A-a2",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_with_leading_spaces() {
-        parse_and_check_against("      Feature-A-a2 something else", 
-            "Feature-A-a2", "something else");
+        parse_and_check_against(
+            "      Feature-A-a2 something else",
+            "Feature-A-a2",
+            "something else",
+        );
     }
 
     #[test]
     fn should_normalize_fid_with_no_desc() {
-        parse_and_check_against(" Feature-A-OM-CP3",
-            "Feature-A", "");
+        parse_and_check_against(" Feature-A-OM-CP3", "Feature-A", "");
     }
 
     fn parse_and_check_against(summary: &str, expected: &str, trailing: &str) {

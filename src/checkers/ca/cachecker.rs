@@ -1,16 +1,16 @@
 extern crate itertools;
 
 use crate::checkers::ca::timeline::get_system_split;
-use std::io::{BufWriter};
-use std::io::Write;
 use std::fmt::format;
 use std::fs::File;
+use std::io::BufWriter;
+use std::io::Write;
 
-use super::caitem::{Activity, CAItem};
-use super::timeline::analyze_timeline;
-use super::pipeline::PipelineInfo;
 use super::super::fs2::fs2item::Fs2Item;
 use super::super::sys::sysitem::SysItem;
+use super::caitem::{Activity, CAItem};
+use super::pipeline::PipelineInfo;
+use super::timeline::analyze_timeline;
 use crate::checkers::utils::get_leftmost;
 
 use self::itertools::Itertools;
@@ -25,23 +25,27 @@ pub fn analyze_result(items: &[CAItem], sys_items: &[SysItem], _fs2_items: &[Fs2
 
     //calcualte lead time by features
     let mut buf_writer = BufWriter::new(File::create("ca-lead-time-report.txt").unwrap());
-    fn efs_ei(it: &CAItem) -> bool { it.activity != Activity::NA}
-    fn efs_sw(it: &CAItem) -> bool { it.activity != Activity::NA && it.activity != Activity::ET }
+    fn efs_ei(it: &CAItem) -> bool {
+        it.activity != Activity::NA
+    }
+    fn efs_sw(it: &CAItem) -> bool {
+        it.activity != Activity::NA && it.activity != Activity::ET
+    }
     analyze_timeline(&mut buf_writer, items, "EFS-EI", &mut efs_ei);
     analyze_timeline(&mut buf_writer, items, "EFS-SW", &mut efs_sw);
     info!("All items' lead time analyzed and dump to report file!");
 
-    let mut buf_writer = BufWriter::new(File::create("ca-plan-report.txt").unwrap());    
+    let mut buf_writer = BufWriter::new(File::create("ca-plan-report.txt").unwrap());
     analyze_plan(&mut buf_writer, items, sys_items);
     info!("Plan status analyzed!");
 
-    let mut buf_writer = BufWriter::new(File::create("ca-pipeline.txt").unwrap());    
+    let mut buf_writer = BufWriter::new(File::create("ca-pipeline.txt").unwrap());
     generate_pipeline(&mut buf_writer, items);
 
     info!("Analysis of CA issues finished!");
 }
 
-fn dump_all(buf_writer: &mut BufWriter<File>, items: &[CAItem], sys_items: &[SysItem]){
+fn dump_all(buf_writer: &mut BufWriter<File>, items: &[CAItem], sys_items: &[SysItem]) {
     let total = items.len();
     let summary = format(format_args!("@@ CA analysis: {} issues in total\n", total));
     info!("Got {} issues for this analysis", total);
@@ -52,35 +56,63 @@ fn dump_all(buf_writer: &mut BufWriter<File>, items: &[CAItem], sys_items: &[Sys
     for it in sys_items {
         let _x = sys_map.insert(it.get_fid().to_string(), it);
     }
-    
+
     buf_writer.write_all(BANNER.as_bytes()).unwrap();
     items.iter().for_each(|it| {
-        let release = sys_map.get(&it.feature_id).map(|sys_it| sys_it.release.as_ref()).unwrap_or("");
-        let line = format(format_args!("{:9}|{:15}|{:4}|{:12}|{:10}|{:3}|{:8}|{:4}|{:4}|{:4}|{:60}\n",
-            it.feature_id, get_leftmost(&it.sub_id, 15), it.target, get_leftmost(release, 12),
-            it.key, it.activity, get_leftmost(&it.team, 8), it.start_fb, 
-            it.end_fb, it.efforts, get_leftmost(&it.description, 60)
+        let release = sys_map
+            .get(&it.feature_id)
+            .map(|sys_it| sys_it.release.as_ref())
+            .unwrap_or("");
+        let line = format(format_args!(
+            "{:9}|{:15}|{:4}|{:12}|{:10}|{:3}|{:8}|{:4}|{:4}|{:4}|{:60}\n",
+            it.feature_id,
+            get_leftmost(&it.sub_id, 15),
+            it.target,
+            get_leftmost(release, 12),
+            it.key,
+            it.activity,
+            get_leftmost(&it.team, 8),
+            it.start_fb,
+            it.end_fb,
+            it.efforts,
+            get_leftmost(&it.description, 60)
         ));
         buf_writer.write_all(line.as_bytes()).unwrap();
     });
     buf_writer.write_all(BANNER.as_bytes()).unwrap();
 
-    let total_efforts = items.iter().map(|it| if it.efforts > 0 {it.efforts} else {0}).sum::<i32>();
+    let total_efforts = items
+        .iter()
+        .map(|it| if it.efforts > 0 { it.efforts } else { 0 })
+        .sum::<i32>();
     let unestimated = items.iter().filter(|it| it.efforts == -1).count();
-    buf_writer.write_all(format(format_args!("Total efforts:{}, unestimated: {}/{}[{:.1}%]", 
-            total_efforts, unestimated, total, (unestimated as f32)/(total as f32)*100.0
-        )).as_bytes()).unwrap();
+    buf_writer
+        .write_all(
+            format(format_args!(
+                "Total efforts:{}, unestimated: {}/{}[{:.1}%]",
+                total_efforts,
+                unestimated,
+                total,
+                (unestimated as f32) / (total as f32) * 100.0
+            ))
+            .as_bytes(),
+        )
+        .unwrap();
 }
 
 pub fn analyze_plan(buf_writer: &mut BufWriter<File>, items: &[CAItem], sys_items: &[SysItem]) {
     //check if everything is planned by entity level!
-    let mut om_features:Vec<&str> = sys_items.iter()
+    let mut om_features: Vec<&str> = sys_items
+        .iter()
         .filter(|it| it.is_oam_feature())
         .map(|it| it.get_fid())
         .collect();
     om_features.sort();
-    
-    let line = format(format_args!("Total {} OM system level features candidate\n", om_features.len()));
+
+    let line = format(format_args!(
+        "Total {} OM system level features candidate\n",
+        om_features.len()
+    ));
     buf_writer.write_all(line.as_bytes()).unwrap();
     buf_writer.write_all(BANNER.as_bytes()).unwrap();
 
@@ -89,22 +121,30 @@ pub fn analyze_plan(buf_writer: &mut BufWriter<File>, items: &[CAItem], sys_item
     let mut unplanned = 0;
     for (fid, mut sub_items) in &items
         .iter()
-        .filter(|it| om_features.binary_search_by(|fid| cmp_with_prefix_as_equal(fid, it.sub_id.as_str())).is_ok() )
-        .group_by(|item| get_system_split(&item.sub_id)) {
-            //check if ET planned
-            let test_status = if sub_items.any(|it| it.activity == Activity::ET) {
-                planned += 1;
-                "planned"
-            } else {
-                unplanned += 1;
-                "not planned!"
-            };
+        .filter(|it| {
+            om_features
+                .binary_search_by(|fid| cmp_with_prefix_as_equal(fid, it.sub_id.as_str()))
+                .is_ok()
+        })
+        .group_by(|item| get_system_split(&item.sub_id))
+    {
+        //check if ET planned
+        let test_status = if sub_items.any(|it| it.activity == Activity::ET) {
+            planned += 1;
+            "planned"
+        } else {
+            unplanned += 1;
+            "not planned!"
+        };
 
         let line = format(format_args!("Fid = {}, ET status ={}\n", fid, test_status));
         buf_writer.write_all(line.as_bytes()).unwrap();
     }
 
-    let line = format(format_args!("ET unplanned = {}, planned ={}\n", planned, unplanned));
+    let line = format(format_args!(
+        "ET unplanned = {}, planned ={}\n",
+        planned, unplanned
+    ));
     buf_writer.write_all(line.as_bytes()).unwrap();
     buf_writer.write_all(BANNER.as_bytes()).unwrap();
 }
@@ -119,7 +159,8 @@ fn cmp_with_prefix_as_equal(prefix: &str, right: &str) -> Ordering {
 }
 
 pub fn generate_pipeline(buf_writer: &mut BufWriter<File>, items: &[CAItem]) {
-    items.iter()
+    items
+        .iter()
         .map(|item| PipelineInfo::from_item(item))
         .for_each(|it| {
             //TODO: calculate first and max span?
@@ -134,14 +175,14 @@ mod tests {
     use std::cmp::Ordering;
     #[test]
     fn should_compare_with_same_prefix_as_equal() {
-        assert_eq!(cmp_with_prefix_as_equal("AAA", "AAA-b"), Ordering::Equal);   
-        assert_eq!(cmp_with_prefix_as_equal("AAA", "AAA-B-c"), Ordering::Equal);   
-        assert_eq!(cmp_with_prefix_as_equal("AAA", "AAA"), Ordering::Equal);   
+        assert_eq!(cmp_with_prefix_as_equal("AAA", "AAA-b"), Ordering::Equal);
+        assert_eq!(cmp_with_prefix_as_equal("AAA", "AAA-B-c"), Ordering::Equal);
+        assert_eq!(cmp_with_prefix_as_equal("AAA", "AAA"), Ordering::Equal);
     }
 
     #[test]
     fn should_compare_with_different_prefix_by_strcmp() {
-        assert_eq!(cmp_with_prefix_as_equal("AAA", "BBB-b"), Ordering::Less);   
-        assert_eq!(cmp_with_prefix_as_equal("BBB", "AAA-b"), Ordering::Greater);   
+        assert_eq!(cmp_with_prefix_as_equal("AAA", "BBB-b"), Ordering::Less);
+        assert_eq!(cmp_with_prefix_as_equal("BBB", "AAA-b"), Ordering::Greater);
     }
 }

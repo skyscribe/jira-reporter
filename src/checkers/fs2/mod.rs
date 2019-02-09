@@ -66,7 +66,7 @@ mod test {
         let issues = (*qry_result).issues;
         assert_eq!(issues.len(), 3);
 
-        let ees : Vec<Option<u32>> = issues.iter().map(|it| it.get_efforts()).collect();
+        let ees: Vec<Option<u32>> = issues.iter().map(|it| it.get_efforts()).collect();
         assert_eq!(ees, vec![Some(60), None, Some(0)]);
     }
 }

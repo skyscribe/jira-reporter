@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 #[derive(Serialize, Clone)]
 #[allow(non_snake_case)]
-pub struct Query{
+pub struct Query {
     pub jql: Rc<String>,
     pub startAt: usize,
     pub maxResults: usize,
@@ -42,7 +42,7 @@ impl Query {
 
         let mut remainings = Vec::new();
         for it in 1..=round {
-            remainings.push(Query{
+            remainings.push(Query {
                 jql: self.jql.clone(),
                 startAt: it * self.maxResults,
                 maxResults: self.maxResults,

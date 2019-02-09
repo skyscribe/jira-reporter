@@ -1,5 +1,5 @@
-use super::sysissue::SysIssue;
 use super::super::datatypes::StoredData;
+use super::sysissue::SysIssue;
 use std::cmp::Ord;
 use std::cmp::Ordering;
 
@@ -39,7 +39,8 @@ impl SysItem {
 
 impl Ord for SysItem {
     fn cmp(&self, other: &SysItem) -> Ordering {
-        self.area.cmp(&other.area)
+        self.area
+            .cmp(&other.area)
             .then(self.summary.cmp(&other.summary))
             .then(self.status.cmp(&other.status))
             .then(self.key.cmp(&other.key))
@@ -47,13 +48,13 @@ impl Ord for SysItem {
 }
 
 impl PartialOrd for SysItem {
-    fn partial_cmp(&self, other:&SysItem) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &SysItem) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl PartialEq for SysItem {
-    fn eq(&self, other:&SysItem) -> bool {
+    fn eq(&self, other: &SysItem) -> bool {
         self.cmp(other) == Ordering::Equal
     }
 }
@@ -68,8 +69,8 @@ impl StoredData for SysItem {
 
 #[cfg(test)]
 mod tests {
-    extern crate serde_json;
     extern crate serde;
+    extern crate serde_json;
     use super::*;
     use crate::checkers::sys::sysissue::tests::*;
 

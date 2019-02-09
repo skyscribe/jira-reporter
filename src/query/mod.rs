@@ -1,6 +1,6 @@
 pub mod batch;
-pub mod result;
 pub mod issue;
+pub mod result;
 
 // Tests for this module
 #[cfg(test)]
@@ -13,7 +13,7 @@ mod test {
             String::from("summary"), 
             String::from("status"), 
             String::from("assignee")
-            ]),  
+            ]),
             r#"{"jql":"Project = FPB","startAt":0,"maxResults":100,"fields":["summary","status","assignee"]}"#
             .to_string()
         )
@@ -35,9 +35,13 @@ mod test {
         let remainings = qry.create_remaining(300);
         assert_eq!(remainings.len(), 2);
 
-        assert_eq!(base_json.replace(r#"startAt":0"#, r#"startAt":100"#), 
-            remainings[0].to_json().unwrap());
-        assert_eq!(base_json.replace(r#"startAt":0"#, r#"startAt":200"#), 
-            remainings[1].to_json().unwrap());
+        assert_eq!(
+            base_json.replace(r#"startAt":0"#, r#"startAt":100"#),
+            remainings[0].to_json().unwrap()
+        );
+        assert_eq!(
+            base_json.replace(r#"startAt":0"#, r#"startAt":200"#),
+            remainings[1].to_json().unwrap()
+        );
     }
 }

@@ -1,25 +1,25 @@
-use crate::query::issue::Issue;
 use crate::checkers::datatypes::ParsedData;
 use crate::checkers::utils::*;
+use crate::query::issue::Issue;
 use serde_json::Value;
 
-const SYS_FIELDS_SUMMARY   : &str = "summary";
-const SYS_FIELDS_AREA      : &str = "customfield_38711";
-const SYS_FIELDS_STATUS    : &str = "status";
-const SYS_FIELDS_TITLE    : &str = "customfield_38703";
-const SYS_FIELDS_RELEASE  : &str = "customfield_38724";
+const SYS_FIELDS_SUMMARY: &str = "summary";
+const SYS_FIELDS_AREA: &str = "customfield_38711";
+const SYS_FIELDS_STATUS: &str = "status";
+const SYS_FIELDS_TITLE: &str = "customfield_38703";
+const SYS_FIELDS_RELEASE: &str = "customfield_38724";
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SysFields {
-    #[serde(rename="customfield_38703")]
+    #[serde(rename = "customfield_38703")]
     pub title: Value,
 
-    #[serde(rename="customfield_38724")]
-    pub release: Value, 
+    #[serde(rename = "customfield_38724")]
+    pub release: Value,
 
     pub summary: String,
 
-    #[serde(rename="customfield_38711")]
+    #[serde(rename = "customfield_38711")]
     pub area: Value,
     pub status: Value,
 }
@@ -30,7 +30,7 @@ impl SysIssue {
     pub fn get_title(&self) -> String {
         match self.fields.title {
             Value::String(ref some) => some.clone(),
-            _ => "NA".to_string(), 
+            _ => "NA".to_string(),
         }
     }
 
@@ -50,9 +50,16 @@ impl SysIssue {
 impl ParsedData for SysIssue {
     //get field lists
     fn get_field_list() -> Vec<String> {
-        vec![SYS_FIELDS_SUMMARY, SYS_FIELDS_AREA, SYS_FIELDS_STATUS, 
-                SYS_FIELDS_TITLE, SYS_FIELDS_RELEASE]
-            .iter().map(|x| x.to_string()).collect()
+        vec![
+            SYS_FIELDS_SUMMARY,
+            SYS_FIELDS_AREA,
+            SYS_FIELDS_STATUS,
+            SYS_FIELDS_TITLE,
+            SYS_FIELDS_RELEASE,
+        ]
+        .iter()
+        .map(|x| x.to_string())
+        .collect()
     }
 }
 
@@ -63,7 +70,7 @@ pub(crate) mod tests {
 
     #[test]
     fn should_parse_records_with_null() {
-        let json = get_test_json(); 
+        let json = get_test_json();
         let issue = serde_json::from_str::<SysIssue>(&json);
         assert!(issue.is_ok(), "{:?}", issue);
     }
