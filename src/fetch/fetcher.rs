@@ -53,17 +53,14 @@ impl Fetcher {
     pub fn query_with<P>(
         &mut self,
         req: RequestInfo,
-        core: &mut Core,
-        p: Option<P>,
+        mut core: &mut Core,
+        result_parser: Option<P>,
     ) -> impl Future<Item = String, Error = Error>
     where
         P: FnOnce(&str, StatusCode) -> (),
     {
-        if self.client.is_none() {
-            info!("Creating client connection since not exist yet!");
-            self.client = Some(self.prepare_proxied_client(core));
-        }
-        let request = self.compose_request(req);
+        self.prepare_proxied_client_if_not_created(&mut core);
+        let request = self.build_request_and_add_headers(req);
 
         //perform request now
         self.client
@@ -83,7 +80,7 @@ impl Fetcher {
                     _ => "invalid, don't parse",
                 };
 
-                if let Some(parser) = p {
+                if let Some(parser) = result_parser {
                     parser(&body_str, code);
                 }
 
@@ -91,7 +88,12 @@ impl Fetcher {
             })
     }
 
-    fn prepare_proxied_client(&self, _core: &mut Core) -> Client<ProxyConnector<HttpConnector>> {
+    fn prepare_proxied_client_if_not_created(&mut self, _core: &mut Core) {
+        if self.client.is_some() {
+            return
+        }
+
+        info!("Creating client connection since not exist yet!");
         //let handle = core.handle();
         let proxy = {
             let proxy_uri = "http://10.144.1.10:8080".parse().unwrap();
@@ -101,10 +103,10 @@ impl Fetcher {
             let connector = HttpConnector::new(4);
             ProxyConnector::from_proxy(connector, proxy).unwrap()
         };
-        Client::builder().build(proxy)
+        self.client = Some(Client::builder().build(proxy))
     }
 
-    fn compose_request(&self, req: RequestInfo) -> Request<Body> {
+    fn build_request_and_add_headers(&self, req: RequestInfo) -> Request<Body> {
         info!("Request for {}", &req.uri);
 
         let mut builder = Request::builder();
