@@ -66,7 +66,15 @@ impl<'a> Searcher<'a> {
 
     fn perform_parallel<T: DeserializeOwned>(&mut self, result: &mut QueryResult<T>) {
         let (tx, rx) = channel();
-        while self.pending_jobs.is_empty() {
+        debug!(
+            "There're {} jobs to perform query!",
+            self.pending_jobs.len()
+        );
+        while !self.pending_jobs.is_empty() {
+            debug!(
+                "There're {} jobs to perform query!",
+                self.pending_jobs.len()
+            );
             self.finished.clear();
             self.drain_all_jobs(&tx);
             self.collect_all_responses(result, &rx);
@@ -85,7 +93,7 @@ impl<'a> Searcher<'a> {
             let sender1 = sender.clone();
             let parser = move |json: &str, code: StatusCode| {
                 let my_result = match code {
-                    StatusCode::Ok => parse_query_result::<T>(&json).ok_or_else(|| qry.startAt),
+                    StatusCode::OK => parse_query_result::<T>(&json).ok_or_else(|| qry.startAt),
                     _ => Err(qry.startAt),
                 };
                 let _x = sender1.send(my_result);
@@ -104,6 +112,7 @@ impl<'a> Searcher<'a> {
                 });
             sub_queries.push(sub_fetch);
         }
+        debug!("Run all sub-queries!");
         let _x = self.core.run(join_all(sub_queries));
     }
 

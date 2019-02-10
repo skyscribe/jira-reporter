@@ -2,11 +2,11 @@ extern crate hex;
 extern crate hyper;
 extern crate rpassword;
 
-use self::hex::{decode, encode};
-use self::hyper::header::Basic;
-use self::rpassword::prompt_password_stdout;
+use hex::{decode, encode};
+use rpassword::prompt_password_stdout;
 use std::fs;
 use std::io::{stdin, stdout, Write};
+use typed_headers::Credentials;
 
 const CRED_FILE: &str = ".cred.bin";
 
@@ -53,17 +53,14 @@ impl Login {
         }
     }
 
-    pub fn to_basic(&self) -> Basic {
+    pub fn to_basic(&self) -> Credentials {
         //we just show password as a series of stars
         info!(
             "Prepared login details now with user=<{}>, pwd=<{}>",
             self.username,
             String::from_utf8(vec![42; self.password.len()]).unwrap()
         );
-        Basic {
-            username: self.username.clone(),
-            password: Some(self.password.clone()),
-        }
+        Credentials::basic(&self.username, &self.password).unwrap()
     }
 
     pub fn load_credentials() -> Option<Login> {

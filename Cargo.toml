@@ -10,14 +10,17 @@ serde_json = "1.0"
 serde_derive = "1.0"
 
 futures = "0.1"
-hyper = "0.11.24"
-hyper-proxy = "0.4.1"
+hyper = "0.12"
+hyper-proxy = "0.5"
+typed-headers = "0.1"
 tokio-core = "0.1.17"
+http = "0.1"
+mime = "0.3"
 
 log = "0.4.3"
-flexi_logger = "0.9.2"
+flexi_logger = "0.10"
 
-rpassword = "2.0.0"
+rpassword = "2"
 hex = "0.3.2"
 
 itertools = "0.7"
